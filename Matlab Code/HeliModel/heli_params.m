@@ -1,0 +1,42 @@
+%% Helicopter Parameters
+%note t.r. - tail rotor and m.r. - main rotor
+
+heli.m = 8.2; % mass(kg) 
+heli.I_xx = 0.18; % rolling moment of inertia (kg*m^2)
+heli.I_yy = 0.34; % pitching moment of inertia (kg*m^2)
+heli.I_zz = 0.28; % yawing moment of inertia (kg*m^2)
+heli.K_beta = 54; % hub torsional stiffness (N*m/rad)
+heli.gamma_fb = 0.8; % stabilizer bar lock number 
+heli.B_nom = 4.2; % lateral cyclic to flap gain at nominal rpm (rad/rad)
+heli.A_nom = 4.2; % longitudinal cyclic to flap gain at nominal rpm (rad/rad)
+heli.K_mu = 0.2; % scaling of flap response to speed variation
+heli.omega_nom = 167; % nominal m.r. speed (rad/s)
+heli.R_mr = 0.775; % m m.r. radius (m)
+heli.c_mr = 0.058; % m.r. chord (m)
+heli.a_mr = 5.5; % m.r. blade lift curve slope (rad^-1)
+heli.C_mr_D0 = 0.024; % m.r. blade zero lift drag coefficient
+heli.C_mr_T_max = 0.0055; % m.r. max thrust coefficient
+heli.I_beta_mr = 0.038; % m.r. blade flapping inertia (m^2)
+heli.R_tr = 0.13; % t.r. radius (m)
+heli.c_tr = 0.029; % t.r. chord (m)
+heli.a_tr = 5; % t.r. blade lift curve slope (rad^-1)
+heli.C_tr_D0 = 0.024; % t.r. blade zero lift drag coefficient
+heli.C_tr_T_max = 0.05; % t.r. max thrust coefficient
+heli.n_tr = 4.66; % Gear ratio of t.r. to m. r.
+heli.n_es = 9.0; % Gear ratio of engine shaft to m. r.
+heli.delta_r_trim = 0.1; % t.r. pitch trim offset (rad)
+heli.S_vf = 0.012; % Effective vertical fin area (m^2)
+heli.C_vf_La = 2.0; % Vertical fin lift curve slope (rad^-1)
+heli.eps_vf_vf = 0.2; % Fraction of vertical fin area exposed to t.r. induced velocity
+heli.S_ht = 0.01; % Horizontal fin area (m^2)
+heli.C_ht_La = 3.0; % Horizontal tail lift curve slope (rad^-1)
+heli.P_idle_eng = 0.0; % Engine idle power (W)
+heli.P_max_eng = 2000; % Engine max power (W)
+heli.K_p = 0.01; % Proportional governor gain (s/rad)
+heli.K_i = 0.02; % Integral governor gain (rad^-1)
+heli.S_fus_x = 0.1; % Frontal fuselage drag area (m^2)
+heli.S_fus_y = 0.22; % Side fuselage drag area (m^2)
+heli.h_mr = 0.235; % m.r. hub height above c.g. (m) 
+heli.l_tr = 0.91; % t.r. hub location behind c.g. (m)
+heli.h_tr = 0.08; % t.r. height above c.g. (m)
+heli.l_ht = 0.71; % Stabilizer location behind c.g. (m)
