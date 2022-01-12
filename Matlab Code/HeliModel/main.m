@@ -29,3 +29,11 @@ x(:,1)=x0;
 for k=1:length(t)-1  
     [x(:,k+1),xdot(:,k)]= RK4_zoh(dyn,x(:,k),u,t(k),heli,dt);
 end
+
+figure(1) 
+subplot(3,1,1)
+plot(x(1,:))
+subplot(3,1,2)
+plot(x(2,:))
+subplot(3,1,3)
+plot(x(3,:))

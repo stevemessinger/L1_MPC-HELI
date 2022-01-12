@@ -212,8 +212,10 @@ delta_t = min(max(delta_t,0),1);
 P_e = P_max_eng*delta_t; 
 Q_e = P_e/omega_mr; 
 Q_mr = C_Q*rho*((omega_tr*R_tr)^2)*pi*(R_tr^3); %yawing moment produced by the tail
+Q_tr = C_Q*rho*((omega_tr*R_tr)^2)*pi*(R_tr^3); %yawing moment produced by the tail
 xdot(16) = xdot(13) + (1/I_rot)*(Q_e - Q_mr - n_tr*Q_tr); 
 
+V_itr = sqrt((m*g)/(2*rho*pi*R_tr^2));
 %vertical fin forces and moments 
 v_vf = v_a - eps_vf_tr*V_itr-l_tr*r; 
 w_tr = w_a - l_tr*q - K_lambda*V_imr; 
@@ -239,5 +241,6 @@ xdot(12)= p*r*(I_zz - I_xx)/I_yy + (M_mr + M_ht)/I_yy;
 xdot(13)= p*q*(I_xx - I_yy)/I_zz + (-Q_e + N_vf*N_tr)/I_zz; 
 
 xdot(16) = x(17); 
+xdot(17) = x(16); 
 
 end
