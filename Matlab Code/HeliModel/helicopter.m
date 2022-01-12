@@ -1,6 +1,6 @@
 function xdot=helicopter(x,u,t,heli)
 %{
-dynamics of a Foucault pendulum
+dynamics of a micro helicopter 
 
 inputs:
 x=[pos_n pos_e pos_d u   v   w   q0   q1   q2   q3   p    q    r    b_1  
