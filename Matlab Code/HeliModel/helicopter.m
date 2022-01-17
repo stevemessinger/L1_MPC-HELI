@@ -17,7 +17,7 @@ Here t is unused.
 note that the helicopter blades rotate clockwise when viewed from above
 
 %} 
-xdot=nan(6,1); % allocate an array for xdot
+xdot=nan(17,1); % allocate an array for xdot
 
 u_wind = 0; 
 v_wind = 0; 
