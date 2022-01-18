@@ -84,8 +84,8 @@ p = x(11); q = x(12); r = x(13);
 % organize linear velocities 
 u = x(4); v = x(5); w = x(6); 
 % organize main rotor angular position and velocity 
-psi_mr = x(17); 
-omega_mr = x(16); 
+psi_mr = x(16); 
+omega_mr = x(17); 
 
 % DCM from body to NED
 Cnb = [(q0^2+q1^2-q2^2-q3^2), 2*(q1*q2+q0*q3), 2*(q1*q3-q0*q2);
@@ -231,10 +231,9 @@ V_tip_tr = omega_tr*R_tr;
 V_itr = lambda_0_tr*V_tip_tr; %NOT SURE IF RIGHT
 
 % lamda_0_tr = mu_z_tr - 2*(((2*C_T_tr)/(a_tr*sigma_tr)) - delta_r*((1/3) + ((mu_tr^2)/2))); 
-C_Q_tr = C_T_tr*(lambda_0_tr - mu_z) + ((C_tr_D0*sigma_tr)/(8))*(1 + ((7/3)*mu_tr^2));%tail rotor torque coefficient
+C_Q_tr = C_T_tr*(lambda_0 - mu_z) + ((C_mr_D0*sigma)/(8))*(1 + ((7/3)*mu^2));%tail rotor torque coefficient
 
 % engine , govenor, rotorspeed model 
-omega_c = omega_nom; 
 I_rot = 2.5*I_beta_mr; 
 delta_t = K_p*(omega_c - omega_mr) + K_i*omega_i; 
 xdot(18) = omega_c - omega_mr; 
@@ -243,6 +242,7 @@ P_e = P_max_eng*delta_t;
 Q_e = P_e/omega_mr; 
 Q_mr = C_Q*rho*((omega_tr*R_tr)^2)*pi*(R_tr^3); %yawing moment produced by the mr
 Q_tr = C_Q_tr*rho*((omega_tr*R_tr)^2)*pi*(R_tr^3); %yawing moment produced by the tail rotor
+xdot(16) = xdot(13) + (1/I_rot)*(Q_e - Q_mr - n_tr*Q_tr); 
 
 %vertical fin forces and moments 
 v_vf = v_a - eps_vf_tr*V_itr-l_tr*r; 
@@ -269,7 +269,6 @@ xdot(11)= q*r*(I_yy - I_zz)/I_xx + (L_mr + L_vf + L_tr)/I_xx;
 xdot(12)= p*r*(I_zz - I_xx)/I_yy + (M_mr + M_ht)/I_yy; 
 xdot(13)= p*q*(I_xx - I_yy)/I_zz + (-Q_e + N_vf + N_tr)/I_zz; 
 
-xdot(16) = xdot(13) + (1/I_rot)*(Q_e - Q_mr - n_tr*Q_tr); 
 xdot(17) = x(16); 
 
 end
