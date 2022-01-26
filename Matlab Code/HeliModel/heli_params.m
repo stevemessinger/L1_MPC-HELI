@@ -41,3 +41,7 @@ heli.h_mr = 0.235; % m.r. hub height above c.g. (m)
 heli.l_tr = 0.91; % t.r. hub location behind c.g. (m)
 heli.h_tr = 0.08; % t.r. height above c.g. (m)
 heli.l_ht = 0.71; % Stabilizer location behind c.g. (m)
+heli.delta_lat_max = 0.096; 
+heli.delta_lon_max = 0.096; 
+heli.delta_col_max = 0.183; 
+heli.delta_r_max = 0.38; 

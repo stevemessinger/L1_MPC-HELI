@@ -66,13 +66,23 @@ h_mr = heli.h_mr; % m.r. hub height above c.g. (m)
 l_tr = heli.l_tr; % t.r. hub location behind c.g. (m)
 h_tr = heli.h_tr; % t.r. height above c.g. (m)
 l_ht = heli.l_ht; % Stabilizer location behind c.g. (m)
+delta_lat_max = heli.delta_lat_max; 
+delta_lon_max = heli.delta_lon_max; 
+delta_col_max = heli.delta_col_max; 
+delta_r_max = heli.delta_r_max; 
  
 delta_col = u(1);
 delta_lat = u(2); 
 delta_lon = u(3); 
-delta_r = u(4); 
+delta_r = u(4) + delta_r_trim; 
 % delta_t = u(5); 
 theta_0 = u(6);
+
+%limit inputs 
+delta_lat = min(max(delta_lat,-delta_lat_max),delta_lat_max);
+delta_lon = min(max(delta_lon,-delta_lon_max),delta_lon_max);
+delta_col = min(max(delta_col,-delta_col_max),delta_col_max);
+delta_r = min(max(delta_r,-delta_r_max),delta_r_max);
 
 a_1 = x(15); 
 b_1 = x(14); 
@@ -84,7 +94,7 @@ p = x(11); q = x(12); r = x(13);
 % organize linear velocities 
 u = x(4); v = x(5); w = x(6); 
 % organize main rotor angular position and velocity 
-psi_mr = x(17); 
+% psi_mr = x(17); 
 omega_mr = x(16); 
 
 % DCM from body to NED
@@ -106,16 +116,14 @@ euler = quat2eul([q0, q1, q2, q3]); %  [yaw, pitch, roll]
 % nonlinear dynamics simulation
 xdot(7:10) = 0.5*omega*x(4:7); % quaternion dot 
 
-
 %Thrust 
-
 V_tip_mr = omega_mr*R_mr; % tip speed of the main rotor 
 % V_imr = sqrt((m*g)/(2*rho*pi*R_mr^2)); % m.r. induced velocity 
 % lambda_i_mr = V_i_mr/V_tip_mr; % inflow ratio
 % tau_lambda = 0.849/(4*lambda_trim*omega_mr); % time constant for settling of the inflow transients at hover
-T_max = 20.5*m*g; %max thrust
+% T_max = 20.5*m*g; %max thrust
 n_w = 0.9; %account for nonideal wake contraction and the power lost due to the nonuniform velocity and pressure distribution in the wake
-C_T_max = T_max/(rho*((omega_mr*R_mr)^2)*pi*R_mr^2); %thrust coefficient
+% C_T_max = T_max/(rho*((omega_mr*R_mr)^2)*pi*R_mr^2); %thrust coefficient
 mu = sqrt(((u-u_wind)^2)+((v-v_wind)^2))/(omega_mr*R_mr); %advance ratio
 mu_z = (w-w_wind)/(omega_mr*R_mr); % z advance ratio
 sigma = (2*c_mr)/(pi*R_mr); 
@@ -123,7 +131,7 @@ sigma = (2*c_mr)/(pi*R_mr);
 lambda_0 = 1; old_lambda = 0; f_j = 0.6; diff = 10; 
 while diff > 0.001
     C_T_ideal = ((a_mr*sigma)/2)*(theta_0*((1/3)+((mu^2)/2))+((mu_z-lambda_0)/2));
-    C_T = min(max(C_T_ideal,-C_T_max),C_T_max);
+    C_T = min(max(C_T_ideal,-C_mr_T_max),C_mr_T_max);
     % check for convergence 
     diff = lambda_0 - old_lambda;
     % store previous lambda value
@@ -142,8 +150,8 @@ a_z = Z_w*w + Z_col*delta_col; % z-accleration at hover
 C_Q = C_T*(lambda_0 - mu_z) + ((C_mr_D0*sigma)/(8))*(1 + ((7/3)*mu^2));%main rotor torque coefficient
 Q_mr = C_Q*rho*((omega_mr*R_mr)^2)*pi*(R_mr^3); %yawing moment produced by the main rotor 
 
-a_1_s = 0; 
-b_1_s = 0; 
+% a_1_s = 0; 
+% b_1_s = 0; 
 
 % beta_mr = a_mr + a_1*cos(psi_mr) + b_1*sin(psi_mr); %main rotor flapping angle
 % beta_mr_s = a_1_s*sin(psi_mr) + b_1_s*cos(psi_mr); %flapping of the teetering stabilizer bar
@@ -188,16 +196,6 @@ f_t = 1 - (3/4)*(S_vf/(4*pi*(R_tr^2)));
 omega_tr = n_tr*omega_mr; 
 v_tr = v_a - l_tr*r + h_tr*p; 
 mu_z_tr = v_tr/(omega_tr*R_tr); 
-C_tr_T_del_r = 0.1; %%% THIS NEEDS TO CHANGE
-C_tr_T_mu_z = 0.1; %%% THIS NEEDS TO CHANGE
-Y_tr_del_r = -C_tr_T_del_r*((f_t*rho*((omega_tr*R_tr)^2)*pi*(R_tr^2))/(m)); 
-Y_tr_v = -C_tr_T_mu_z*((f_t*rho*omega_tr*R_tr*pi*(R_tr^2))/(m)); 
-
-Y_tr_max = f_t*C_tr_T_max*rho*((omega_tr*R_tr)^2)*pi*(R_tr^2); 
-Y_tr = m*Y_tr_del_r*delta_r + m*Y_tr_v*mu_z_tr*omega_tr*R_tr; 
-Y_tr = min(max(Y_tr,-Y_tr_max),Y_tr_max);
-N_tr = -Y_tr*l_tr; 
-L_tr = Y_tr*h_tr; 
 
 g_i = (l_tr - R_mr - R_tr)/(h_tr); 
 g_f = (l_tr - R_mr + R_tr)/(h_tr); 
@@ -229,6 +227,19 @@ while diff > 0.001
 end
 V_tip_tr = omega_tr*R_tr; 
 V_itr = lambda_0_tr*V_tip_tr; %NOT SURE IF RIGHT
+%numerically compute partial derivatives 
+C_tr_T_del_r = ((a_tr*sigma_tr)/2)*(theta_0*((1/3)+((mu_tr^2)/2))+((mu_z_tr-lambda_0_tr)/2));
+old2 = ((a_tr*sigma_tr)/2)*(theta_0*((1/3)+((mu_tr^2)/2))+(((mu_z_tr-0.001)-lambda_0_tr)/2));
+new2 = ((a_tr*sigma_tr)/2)*(theta_0*((1/3)+((mu_tr^2)/2))+(((mu_z_tr+0.001)-lambda_0_tr)/2));
+C_tr_T_mu_z = (new2-old2)/(2*0.001); %need to figure out theta_0!!!!!
+Y_tr_del_r = -C_tr_T_del_r*((f_t*rho*((omega_tr*R_tr)^2)*pi*(R_tr^2))/(m)); 
+Y_tr_v = -C_tr_T_mu_z*((f_t*rho*omega_tr*R_tr*pi*(R_tr^2))/(m)); 
+
+Y_tr_max = f_t*C_tr_T_max*rho*((omega_tr*R_tr)^2)*pi*(R_tr^2); 
+Y_tr = m*Y_tr_del_r*delta_r + m*Y_tr_v*mu_z_tr*omega_tr*R_tr; 
+Y_tr = min(max(Y_tr,-Y_tr_max),Y_tr_max);
+N_tr = -Y_tr*l_tr; 
+L_tr = Y_tr*h_tr; 
 
 % lamda_0_tr = mu_z_tr - 2*(((2*C_T_tr)/(a_tr*sigma_tr)) - delta_r*((1/3) + ((mu_tr^2)/2))); 
 C_Q_tr = C_T_tr*(lambda_0_tr - mu_z) + ((C_tr_D0*sigma_tr)/(8))*(1 + ((7/3)*mu_tr^2));%tail rotor torque coefficient
@@ -241,7 +252,6 @@ xdot(18) = omega_c - omega_mr;
 delta_t = min(max(delta_t,0),1);
 P_e = P_max_eng*delta_t; 
 Q_e = P_e/omega_mr; 
-Q_mr = C_Q*rho*((omega_tr*R_tr)^2)*pi*(R_tr^3); %yawing moment produced by the mr
 Q_tr = C_Q_tr*rho*((omega_tr*R_tr)^2)*pi*(R_tr^3); %yawing moment produced by the tail rotor
 
 %vertical fin forces and moments 
@@ -258,7 +268,6 @@ w_ht = w_a + l_ht*q - K_lambda*V_imr;
 Z_ht = 0.5*rho*S_ht*(C_ht_La*norm(u_a)*w_ht + norm(w_ht)*w_ht);
 Z_ht=min(max(Z_ht, -0.5*rho*S_ht*((u_a^2)+(w_ht^2))),0.5*rho*S_ht*((u_a^2)+(w_ht^2)));
 M_ht = Z_ht*l_ht; 
-
 
 % linear accelerations
 xdot(4)= v*r - w*q - g*sin(euler(2)) + (X_mr + X_fus)/m; 
