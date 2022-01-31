@@ -12,19 +12,19 @@ clc
 %assign params
 heli_params; 
 
-dt=0.001; % timestep 
+dt=0.01; % timestep 
 t=0:dt:10; % start -> endtime 
 
 dyn='helicopter'; % define the model
 % allocate space for the arrays
-x=nan(18,length(t));
-xdot=nan(18,length(t));
+x=nan(19,length(t));
+xdot=nan(19,length(t));
 euler=nan(3,length(t));
 
-x0 = zeros(18,1); 
+x0 = zeros(19,1); 
 x0(7) = 1; 
 x0(16) = 167; 
-u = [0.5 0 0 0 0 0.2]; 
+u = [0.001 0 0 0]; 
 
 % assign initial conditions
 x(:,1)=x0;

@@ -5,8 +5,8 @@ dynamics of a micro helicopter
 inputs:
 x=[pos_n pos_e pos_d u   v   w   q0   q1   q2   q3   p    q    r    b_1  
    (1)   (2)   (3)   (4) (5) (6) (7)  (8)  (9) (10) (11) (12) (13) (14)
-   a_1  omega_mr  psi_mr omega_i]'
-  (15)  (16)      (17)    (18)
+   a_1  omega_mr  psi_mr omega omega_i]'
+  (15)  (16)      (17)    (18)  (19)
 
 
 Output
@@ -76,7 +76,8 @@ delta_lat = u(2);
 delta_lon = u(3); 
 delta_r = u(4) + delta_r_trim; 
 % delta_t = u(5); 
-theta_0 = u(6);
+theta_0 = delta_col; %NEED TO CHECK!!!!!
+delta_c = delta_col; %NEED TO CHECK!!!!!
 
 %limit inputs 
 delta_lat = min(max(delta_lat,-delta_lat_max),delta_lat_max);
@@ -86,7 +87,6 @@ delta_r = min(max(delta_r,-delta_r_max),delta_r_max);
 
 a_1 = x(15); 
 b_1 = x(14); 
-omega_i = x(18); 
 
 % organize quaternions / euler rates
 q0 = x(4); q1 = x(5); q2 = x(6); q3 = x(7);
@@ -149,6 +149,7 @@ a_z = Z_w*w + Z_col*delta_col; % z-accleration at hover
 % Torque 
 C_Q = C_T*(lambda_0 - mu_z) + ((C_mr_D0*sigma)/(8))*(1 + ((7/3)*mu^2));%main rotor torque coefficient
 Q_mr = C_Q*rho*((omega_mr*R_mr)^2)*pi*(R_mr^3); %yawing moment produced by the main rotor 
+
 
 % a_1_s = 0; 
 % b_1_s = 0; 
@@ -214,7 +215,7 @@ sigma_tr = (2*c_tr)/(pi*R_tr);
 % solve system of equations iteratively 
 lambda_0_tr = 1; old_lambda_tr = 0; f_j = 0.6; diff = 10; 
 while diff > 0.001
-    C_T_ideal_tr = ((a_tr*sigma_tr)/2)*(theta_0*((1/3)+((mu_tr^2)/2))+((mu_z_tr-lambda_0_tr)/2)); %need to figure out theta_0!!!!!
+    C_T_ideal_tr = ((a_tr*sigma_tr)/2)*(delta_r*((1/3)+((mu_tr^2)/2))+((mu_z_tr-lambda_0_tr)/2)); %need to figure out theta_0!!!!!
     C_T_tr = min(max(C_T_ideal_tr,-C_tr_T_max),C_tr_T_max);
     % check for convergence 
     diff = lambda_0_tr - old_lambda_tr;
@@ -228,9 +229,11 @@ end
 V_tip_tr = omega_tr*R_tr; 
 V_itr = lambda_0_tr*V_tip_tr; %NOT SURE IF RIGHT
 %numerically compute partial derivatives 
-C_tr_T_del_r = ((a_tr*sigma_tr)/2)*(theta_0*((1/3)+((mu_tr^2)/2))+((mu_z_tr-lambda_0_tr)/2));
-old2 = ((a_tr*sigma_tr)/2)*(theta_0*((1/3)+((mu_tr^2)/2))+(((mu_z_tr-0.001)-lambda_0_tr)/2));
-new2 = ((a_tr*sigma_tr)/2)*(theta_0*((1/3)+((mu_tr^2)/2))+(((mu_z_tr+0.001)-lambda_0_tr)/2));
+old1 = ((a_tr*sigma_tr)/2)*((delta_r_trim-0.001)*((1/3)+((mu_tr^2)/2))+(((0)-lambda_0_tr)/2));
+new1 = ((a_tr*sigma_tr)/2)*((delta_r_trim+0.001)*((1/3)+((mu_tr^2)/2))+(((0)-lambda_0_tr)/2));
+old2 = ((a_tr*sigma_tr)/2)*(delta_r_trim*((1/3)+((mu_tr^2)/2))+(((0-0.001)-lambda_0_tr)/2));
+new2 = ((a_tr*sigma_tr)/2)*(delta_r_trim*((1/3)+((mu_tr^2)/2))+(((0+0.001)-lambda_0_tr)/2));
+C_tr_T_del_r = (new1-old1)/(2*0.001); 
 C_tr_T_mu_z = (new2-old2)/(2*0.001); %need to figure out theta_0!!!!!
 Y_tr_del_r = -C_tr_T_del_r*((f_t*rho*((omega_tr*R_tr)^2)*pi*(R_tr^2))/(m)); 
 Y_tr_v = -C_tr_T_mu_z*((f_t*rho*omega_tr*R_tr*pi*(R_tr^2))/(m)); 
@@ -242,13 +245,25 @@ N_tr = -Y_tr*l_tr;
 L_tr = Y_tr*h_tr; 
 
 % lamda_0_tr = mu_z_tr - 2*(((2*C_T_tr)/(a_tr*sigma_tr)) - delta_r*((1/3) + ((mu_tr^2)/2))); 
-C_Q_tr = C_T_tr*(lambda_0_tr - mu_z) + ((C_tr_D0*sigma_tr)/(8))*(1 + ((7/3)*mu_tr^2));%tail rotor torque coefficient
+C_Q_tr = C_T_tr*(lambda_0_tr - mu_z_tr) + ((C_tr_D0*sigma_tr)/(8))*(1 + ((7/3)*mu_tr^2));%tail rotor torque coefficient
 
-% engine , govenor, rotorspeed model 
-omega_c = omega_nom; 
+% engine , govenor, rotorspeed model
+Q_0_mr = 6.3;
+omega_c = omega_nom;
 I_rot = 2.5*I_beta_mr; 
-delta_t = K_p*(omega_c - omega_mr) + K_i*omega_i; 
-xdot(18) = omega_c - omega_mr; 
+delta_t = K_p*x(18) + K_i*x(19); 
+
+% calculate dC_Q/ddelta_col
+dC_TdDelta_col = (a_1*sigma/2) * (delta_col*((1/3) + (mu^2/2)));
+dCq_d_delta_c = dC_TdDelta_col*(lambda_0-mu_z); % only valid at delta_col trim = 0
+
+A_gov = [ -(1/(omega_mr*I_rot))*(3*Q_0_mr + P_max_eng*K_p)    (P_max_eng*K_i)/(omega_mr*I_rot);
+                         -1                                            0]; 
+B_gov = [ (P_max_eng*K_p)/(omega_mr*I_rot)    (-1/(I_rot*C_Q))*(dCq_d_delta_c)*Q_0_mr; 
+                    1                                 0];
+
+xdot(18:19) = A_gov * [x(18);x(19)] + B_gov * [omega_c; delta_c];
+
 delta_t = min(max(delta_t,0),1);
 P_e = P_max_eng*delta_t; 
 Q_e = P_e/omega_mr; 
