@@ -9,12 +9,19 @@ def publishBNOData():
     rate = rospy.Rate(100) # 100hz
     msg = BNO()
 
-    serverIP = "192.168.0.164"
-    ws = websocket.create_connection("ws://" + serverIP)
+    connected = False
+    while not connected:
+        try:
+            serverIP = "192.168.0.164"
+            ws = websocket.create_connection("ws://" + serverIP)
+            connected = True
+        except Exception as e:
+            print(e)
+
+    print("Connected!")
 
     while not rospy.is_shutdown():
         message = ws.recv()
-        print('Got Data!')
 
         data = message.split(':')
         msg.ax = float(data[0])
