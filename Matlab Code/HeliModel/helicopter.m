@@ -209,6 +209,7 @@ else
     K_lambda = 1.5*((((u_a)/(V_imr - w_a))- g_i)/(g_f - g_i)); 
 end 
 
+<<<<<<< Updated upstream
 mu_tr = (v_tr)/(omega_tr*R_tr);
 sigma_tr = (2*c_tr)/(pi*R_tr); 
 
@@ -264,6 +265,10 @@ B_gov = [ (P_max_eng*K_p)/(omega_mr*I_rot)    (-1/(I_rot*C_Q))*(dCq_d_delta_c)*Q
 
 xdot(18:19) = A_gov * [x(18);x(19)] + B_gov * [omega_c; delta_c];
 
+=======
+% engine , govenor, rotorspeed model 
+I_rot = 2.5*I_beta_mr;
+>>>>>>> Stashed changes
 delta_t = min(max(delta_t,0),1);
 P_e = P_max_eng*delta_t; 
 Q_e = P_e/omega_mr; 
