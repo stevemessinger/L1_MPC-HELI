@@ -44,18 +44,18 @@ vicon_data(:,1) = vicon_data(:,1) - vicon_data(1,1); %initialize time to zero
 imu_data(:,1) = imu_data(:,1) - imu_data(1,1); 
 
 % setup simulation
-[max_freq,I] = max([ekf_freq,imu_freq,vicon_freq]);
+[~,I] = max([ekf_freq,imu_freq,vicon_freq]);
 switch I
     case 1
-        dt = 0:1/max_freq:max(length(vicon_data),length(imu_data))*(1/max_freq); 
+        dt = vicon_data(2:end,1) - vicon_data(1:end-1,1); 
     case 2
-        dt = imu_data(2:end,1) - imu_data(1:end-1,1); 
+        dt = vicon_data(2:end,1) - vicon_data(1:end-1,1); 
     case 3
         dt = vicon_data(2:end,1) - vicon_data(1:end-1,1); 
 end 
 % allocate space for arrays
 x_hat = nan(max(length(vicon_data),length(imu_data)),19); % states [p_x p_y p_z v_x v_y v_z q0 q1 q2 q3 w_x w_y w_z b_ax b_ay b_az b_wx b_wy b_wz] 
-time = zeros(1,length(dt)+1); 
+
 
 
 for k = 1:max(length(vicon_data),length(imu_data))-1
@@ -79,6 +79,14 @@ for k = 1:max(length(vicon_data),length(imu_data))-1
         P(:, :, k + 1) = P(:, :, k) + totalPdot * dt;
     end
 
-    time(k+1) = time(k) + dt; % update time 
+
+
+
+
+
+
+
+
+
 end
 
