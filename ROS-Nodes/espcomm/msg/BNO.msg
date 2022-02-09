@@ -4,3 +4,8 @@ float32 az
 float32 gx
 float32 gy
 float32 gz
+int8 sysCal
+int8 accelCal
+int8 gyroCal
+int8 magCal
+int8 dt
