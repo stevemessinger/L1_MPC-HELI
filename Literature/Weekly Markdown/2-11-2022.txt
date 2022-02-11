@@ -1,0 +1,36 @@
+Weekly Updates:
+----Accomplished-----
+-Implimented ACADO MPC on several toy examples:
+	Double Integrator
+	Duffing Oscillator
+	Linear 747 model
+	2DoF Lunar Lander
+
+-Began writing EKF code for data filtering of IMU and Vicon
+
+-Created and tested ROS node for collected IMU Data remotely from ESP32
+
+-Created and tested ROS node for collecting Taranis input
+
+-Implimented and tested Vicon_bridge ROS node
+
+-Collected test input and vicon data on quadcopter
+
+-Investigated IMU data filtering techniques:
+	FFT analysis of IMU data
+	low pass filter construction
+	Butterworth filter
+
+	
+
+----To Do----
+-Impliment ACADO in a ROS node for control:
+	create simplified helicopter model
+	test ACADO on simplified helicopter model
+
+-Finish and codegen EKF node for implimentation in controller
+	test EKF on example dataset(MIT Blackbird)
+
+-Gather full testing data of the helicopter for SysID process
+
+-Impliment Adaptive element of the controller
