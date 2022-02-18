@@ -8,8 +8,8 @@
 #include <iomanip>
 
 WebSocketsServer webSocket = WebSocketsServer(80);
-const char *ssid = "DontConnect";
-const char *password = "Pennstate2020";
+const char *ssid = "ESP32";
+const char *password = "ESP32";
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
 
@@ -69,16 +69,20 @@ void onWebSocketEvent(uint8_t client_num,
 
 // task for performing wifi tasks
 void webSocketTask(void* pvParameters) {
+
+  /*
   WiFi.begin(ssid, password);  // ESP-32 as access point
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
+  */
 
+  WiFi.softAP(ssid, password);
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
+  Serial.println(WiFi.softAPIP());
 
   webSocket.begin();
   webSocket.onEvent(onWebSocketEvent);
