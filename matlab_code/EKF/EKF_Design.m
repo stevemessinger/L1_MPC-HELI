@@ -24,26 +24,28 @@ load('mit_vicon.mat') %load MIT imu data
 
 % choose which data to use 
 run_case = 'mit'; % 'mit' runs mit blackbird test data
+num_steps = 1000; % number of simulation steps to run 
 
 %assign data 
 switch run_case
     case 'mit'
-        vicon_data = [mitviconquad(:,1)*(1e-9) mitviconquad(:,5:7)]; % [time xyz_pos q1 q2 q3 q0]
-        imu_data = [mitimuquad1(:,1)*(1e-9) mitimuquad1(:,5:7) mitimuquad1(:,2:4)]; % [time xyz_accel pqr]
+        vicon_data = [mitviconquad(1:num_steps,1)*(1e-9) mitviconquad(1:num_steps,5:11)]; % [time xyz_pos q1 q2 q3 q0]
+        imu_data = [mitimuquad1(1:num_steps,1)*(1e-9) mitimuquad1(1:num_steps,5:7) mitimuquad1(1:num_steps,2:4)]; % [time xyz_accel pqr]
 end
 
-%filter operating specifications
+%EKF filter operating specifications
 ekf_freq = 100; 
 
 % hardware specifications 
-imu_freq = 1/(imu_data(1001,1) - imu_data(1000,1));  %100; % update frequency of imu (Hz)
-vicon_freq = 1/(vicon_data(1070,1) - vicon_data(1069,1)); %180; % update frequency of vicon pose data (Hz)
+imu_freq = 1/(mean(imu_data(2:end,1) - imu_data(1:end-1,1)));  %100; % update frequency of imu (Hz)
+vicon_freq = 1/(mean(vicon_data(2:end,1) - vicon_data(1:end-1,1))); %180; % update frequency of vicon pose data (Hz)
 
 % NEED TO GIT RID OF THIS
-vicon_data(:,1) = vicon_data(:,1) - vicon_data(1,1); %initialize time to zero 
-imu_data(:,1) = imu_data(:,1) - imu_data(1,1); 
+vicon_data(1:num_steps,1) = vicon_data(:,1) - vicon_data(1,1); %initialize time to zero 
+imu_data(1:num_steps,1) = imu_data(:,1) - imu_data(1,1); 
 
 % setup simulation
+ekf_time = vicon_data(1,1):1/ekf_freq:length(vicon_data)*(1/ekf_freq);
 [max_freq,I] = max([ekf_freq,imu_freq,vicon_freq]);
 switch I
     case 1
@@ -53,32 +55,178 @@ switch I
     case 3
         dt = vicon_data(2:end,1) - vicon_data(1:end-1,1); 
 end 
-% allocate space for arrays
-x_hat = nan(max(length(vicon_data),length(imu_data)),19); % states [p_x p_y p_z v_x v_y v_z q0 q1 q2 q3 w_x w_y w_z b_ax b_ay b_az b_wx b_wy b_wz] 
-time = zeros(1,length(dt)+1); 
 
+%% SIMULATION
+% allocate space for arrays
+x_hat = nan(max(length(vicon_data),length(imu_data)),16); % states [1:p_x 2:p_y 3:p_z 4:v_x 5:v_y 6:v_z 7:q0 8:q1 9:q2 10:q3 11:b_ax 12:b_ay 13:b_az 14:b_wx 15:b_wy 16:b_wz] 
+y = nan(max(length(vicon_data),length(imu_data)),10);
+imu = nan(max(length(vicon_data),length(imu_data)),6); % [ax ay az gx gy gz]
+vicon = nan(max(length(vicon_data),length(imu_data)),7); % [pos_x pos_y pos_z q0 q1 q2 q3]
+P = zeros(16,16,length(vicon_data)); %EKF covariance matrix 
+time = zeros(1,length(dt)+1);
+%assign initial conditions
+time(1) = vicon_data(1,1); 
+vicon(1,:) = vicon_data(1,2:8);
+x_hat(1,:) = [vicon_data(1,2:4) 1  1.5 0 vicon_data(1,5:8) 0.00001 0.00001 0.00001 zeros(1,3)]; 
+
+%EKF filter setup
+P(:,:,1) = eye(16); %initial covariance matrix
+Q = diag([   1      1      1      0.1      0.1      0.1   0.001 0.001 0.001 0.001   0     0     0     0     0     0]);
+          %pos_x  pos_y  pos_z  vel_x  vel_y  vel_z  q0    q1    q2    q3  %b_ax  b_ay  b_az  b_wx  b_wy  b_wz
+R = diag([  0      0     0    0.001   0.001   0.001    0     0     0     0]); 
+         %pos_x  pos_y  pos_z vx vy  vz   q0    q1    q2    q3
+         
+%initialize counters
+vicon_counter = 1; 
+imu_counter = 1; 
+ekf_counter = 1; 
 
 for k = 1:max(length(vicon_data),length(imu_data))-1
-
+    % Vicon measurment occurs 
+    if time(k) >= vicon_data(vicon_counter,1)
+        vicon(k+1,:) = vicon_data(vicon_counter,2:8); 
+        vicon_counter = vicon_counter + 1; 
+    else 
+        vicon(k+1,:) = vicon(k,:); 
+    end
     
-    if mod(time, mInterval) < dt
+    %IMU measurement occurs
+    if time(k) >= imu_data(imu_counter,1)
+        imu(k+1,:) = imu_data(imu_counter,2:7);
+        imu_counter = imu_counter + 1; 
+    else 
+        imu(k+1,:) = imu(k,:); 
+    end
+    
+    y(k+1,:) = y(k,:); 
+        
+    %EKF update occurs -> here we assume that the Vicon and IMU data
+    %are coming at a rate faster than the filter is being ran so an "update
+    %step" occurs each time the EKF is called
+    if time(k) >= ekf_time(ekf_counter)
+        if k < 3 
+            vicon_vel = [1,1.5,0];
+        else
+            vicon_vel(k,:) = (vicon(k+1,1:3) - vicon(k-2,1:3))./(1/ekf_freq); 
+        end
+        %EKF measurment model
+        y(k+1,:) = [vicon(k+1,1:3) vicon_vel(k,:) vicon(k+1,4:7)];
+        % EKF Process Model 
         % integrate EKF equations using RK4
-        xdot1 = derivative(x_hat(:, k), y(:, mCntr - 1), u, time, gains, model);
-        xdot2 = derivative(x_hat(:, k) + xdot1 * dt / 2, y(:, mCntr - 1), u, time + dt / 2, gains, model);
-        xdot3 = derivative(x_hat(:, k) + xdot2 * dt / 2, y(:, mCntr - 1), u, time + dt / 2, gains, model);
-        xdot4 = derivative(x_hat(:, k) + xdot3 * dt, y(:, mCntr - 1), u, time + dt, gains, model);
-        totalxdot(:, k) = (xdot1 + 2 * xdot2 + 2 * xdot3 + xdot4) / 6;
-        x_hat(:, k + 1) = x_hat(:, k) + totalxdot(:, k) * dt;
-
+        xdot1 = derivative(x_hat(k,:), imu(k+1,:), time(k));
+        xdot2 = derivative(x_hat(k,:) + xdot1 * (1/ekf_freq) / 2, imu(k+1,:), time(k) + (1/ekf_freq) / 2);
+        xdot3 = derivative(x_hat(k,:) + xdot2 * (1/ekf_freq) / 2, imu(k+1,:), time(k) + (1/ekf_freq) / 2);
+        xdot4 = derivative(x_hat(k,:) + xdot3 * (1/ekf_freq), imu(k+1,:), time(k) + (1/ekf_freq));
+        totalxdot = (xdot1 + 2 * xdot2 + 2 * xdot3 + xdot4) / 6;
+        x_hat(k+1,:) = x_hat(k,:) + totalxdot * (1/ekf_freq);
+        % asign temp variables 
+        q0 = x_hat(k+1,7); q1 = x_hat(k+1,8); q2 = x_hat(k+1,9); q3 = x_hat(k+1,10); 
+        vx = x_hat(k+1,4); vy = x_hat(k+1,5); vz = x_hat(k+1,6); 
+        b_x = x_hat(k+1,11); b_y = x_hat(k+1,12); b_z = x_hat(k+1,13);
+        b_wx = x_hat(k+1,14); b_wy = x_hat(k+1,15); b_wz = x_hat(k+1,16);
+        %imu estimates [xyz_accel pqr]
+        wx = imu(k+1,4); wy = imu(k+1,5); wz = imu(k+1,6); 
+        ax = imu(k+1,1); ay = imu(k+1,2); az = imu(k+1,3); 
+        % calculate A matrix 
+        A = [   0   0   0   1-2*(q2^2 + q3^2)   2*(q1*q2 - q0*q3)   2*(q1*q3 + q0*q2)  -2*q3*vy+2*q2*vz                  2*q2*vy+2*q3*vz                            -4*q2*vx+2*q1*vy+2*q0*vz                        -4*q3*vx-2*q0*vy+2*q1*vz                    0                       0                       0                 0             0         0; 
+                0   0   0   2*(q1*q2 + q0*q3)   1-2*(q1^2 + q3^2)   2*(q2*q3 - q0*q1)   2*q3*vx-2*q1*vz                  2*q2*vx-4*q1*vy-2*q0*vz                     2*q1*vx+2*q3*vz                                2*q0*vx-4*q3*vy+2*q2*vz                     0                       0                       0                 0             0         0; 
+                0   0   0   2*(q1*q3 - q0*q2)   2*(q2*q3 - q0*q1)   1-2*(q1^2 + q2^2)  -2*q2*vx-2*q1*vy                  2*q3*vx-2*q0*vy-4*q1*vz                    -2*q0*vx+2*q3*vy-4*q2*vz                        2*q1*vx+2*q2*vy                             0                       0                       0                 0             0         0; 
+                0   0   0   0                   0                   0                  -2*q3*(ay-b_y)+2*q2*(az-b_z)       2*q2*(ay-b_y)+2*q3*(az-b_z)                -4*q2*(ax-b_x)+2*q1*(ay-b_y)+2*q0*(az-b_z)     -4*q3*(ax-b_x)-2*q0*(ay-b_y)+2*q1*(az-b_z)  -1+2*(q2^2 + q3^2)   -2*(q1*q2 - q0*q3)      -2*(q1*q3 + q0*q2)    0             0         0;
+                0   0   0   0                   0                   0                   2*q3*(ax-b_x)-2*q1*(az-b_z)      2*q2*(ax-b_x)-4*q1*(ay-b_y)-2*q0*(az-b_z)    2*q1*(ax-b_x)+2*q3*(az-b_z)                   2*q0*(ax-b_x)-4*q3*(ay-b_y)+2*q2*(az-b_z)  -2*(q1*q2 + q0*q3)   -1+2*(q1^2 + q3^2)      -2*(q2*q3 - q0*q1)    0             0         0; 
+                0   0   0   0                   0                   0                  -2*q2*(ax-b_x)-2*q1*(ay-b_y)      2*q3*(ax-b_x)-2*q0*(ay-b_y)-4*q1*(az-b_z)   -2*q0*(ax-b_x)+2*q3*(ay-b_y)-4*q2*(az-b_z)     2*q1*(ax-b_x)+2*q2*(ay-b_y)                -2*(q1*q3 - q0*q2)   -2*(q2*q3 - q0*q1)      -1+2*(q1^2 + q2^2)    0             0         0; 
+                0   0   0   0                   0                   0                   0                                0.5*(-wx+b_wx)                              0.5*(-wy+b_wy)                                 0.5*(-wz+b_wz)                              0                       0                       0                 0.5*q1     0.5*q2     0.5*q3; 
+                0   0   0   0                   0                   0                 0.5*(wx-b_wx)                          0                                       0.5*(wz-b_wz)                                   0.5*(-wy+b_wy)                               0                       0                       0                -0.5*q0     0.5*q3    -0.5*q2; 
+                0   0   0   0                   0                   0                 0.5*(wy-b_wy)                      0.5*(-wz+b_wz)                                  0                                          0.5*(wx-b_wx)                               0                       0                       0                -0.5*q3    -0.5*q0     0.5*q1; 
+                0   0   0   0                   0                   0                 0.5*(wz-b_wz)                      0.5*(wy-b_wy)                               0.5*(-wx+b_wx)                                       0                                     0                       0                       0                 0.5*q2    -0.5*q1    -0.5*q0; 
+                0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0; 
+                0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0; 
+                0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0; 
+                0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0; 
+                0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0; 
+                0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0]; 
         % integrate covariance matrix P using RK4
-        Pdot1 = A * P(:, :, k) * A' + G * Q * G';
-        Pdot2 = A * (P(:, :, k) + Pdot1 * dt / 2) * A' + G * Q * G';
-        Pdot3 = A * (P(:, :, k) + Pdot2 * dt / 2) * A' + G * Q * G';
-        Pdot4 = A * (P(:, :, k) + Pdot3 * dt) * A' + G * Q * G';
+        Pdot1 = A'*P(:,:,k) + P(:,:,k)*A  + Q;
+        Pdot2 = A'*(P(:,:,k) + Pdot1 * (1/ekf_freq) / 2) + (P(:,:,k) + Pdot1 * (1/ekf_freq) / 2)*A  + Q;
+        Pdot3 = A'*(P(:,:,k) + Pdot2 * (1/ekf_freq) / 2) + (P(:,:,k) + Pdot2 * (1/ekf_freq) / 2)*A  + Q;
+        Pdot4 = A'*(P(:,:,k) + Pdot3 * (1/ekf_freq)) + (P(:,:,k) + Pdot3 * (1/ekf_freq))*A  + Q;
         totalPdot = (Pdot1 + 2 * Pdot2 + 2 * Pdot3 + Pdot4) / 6;
-        P(:, :, k + 1) = P(:, :, k) + totalPdot * dt;
+        P(:,:,k+1) = P(:, :, k) + totalPdot * (1/ekf_freq);
+        % EKF measurment model 
+        % if we get a sensor measurement update the EKF
+        % calculate C matrix 
+%         C = [eye(3) zeros(3,13)
+%              zeros(4,6) eye(4) zeros(4,6)]; 
+        C = [eye(10) zeros(10,6)];
+        %make sensor estimate of measurement using x_hat 
+        h_hat = C*x_hat(k+1,:)'; 
+        % update hybrid EKF
+        K = P(:,:,k+1)*C'/(C*P(:,:,k+1)*C' + R); 
+        x_hat(k+1,:) = x_hat(k+1,:)' + K*(y(k+1,:)' - h_hat);
+        ekf_counter = ekf_counter + 1; 
+    else 
+        % no EKF update
+        x_hat(k+1,:) = x_hat(k,:);  
+        P(:,:,k+1) = P(:,:,k); 
     end
 
-    time(k+1) = time(k) + dt; % update time 
+    time(k+1) = time(k) + dt(k); % update time 
 end
+
+%% PLOT
+
+figure(1) 
+subplot(3,2,1)
+plot(time, vicon(:,1), time, x_hat(:,1))
+ylabel('$N_{pos}$','interpreter','latex')
+xlabel('time (s)')
+legend('vicon','$\hat{x}$','interpreter','latex')
+subplot(3,2,3)
+plot(time, vicon(:,2), time, x_hat(:,2))
+ylabel('$E_{pos}$','interpreter','latex')
+xlabel('time (s)')
+legend('vicon','$\hat{x}$','interpreter','latex')
+subplot(3,2,5)
+plot(time, vicon(:,3), time, x_hat(:,3))
+ylabel('$D_{pos}$','interpreter','latex')
+xlabel('time (s)')
+legend('vicon','$\hat{x}$','interpreter','latex')
+subplot(3,2,2)
+plot(time, y(:,4),time, x_hat(:,4))
+ylabel('$N_{vel}$','interpreter','latex')
+xlabel('time (s)')
+legend('y','$\hat{x}$','interpreter','latex')
+subplot(3,2,4)
+plot(time, y(:,5), time, x_hat(:,5))
+ylabel('$E_{vel}$','interpreter','latex')
+xlabel('time (s)')
+legend('y','$\hat{x}$','interpreter','latex')
+subplot(3,2,6)
+plot(time, y(:,6), time, x_hat(:,6))
+ylabel('$D_{vel}$','interpreter','latex')
+xlabel('time (s)')
+legend('y','$\hat{x}$','interpreter','latex')
+
+figure(2) 
+subplot(4,1,1)
+plot(time, vicon(:,4), time, x_hat(:,7))
+ylabel('$q_0$','interpreter','latex')
+xlabel('time (s)')
+legend('vicon','$\hat{x}$','interpreter','latex')
+subplot(4,1,2)
+plot(time, vicon(:,5), time, x_hat(:,8))
+ylabel('$q_1$','interpreter','latex')
+xlabel('time (s)')
+legend('vicon','$\hat{x}$','interpreter','latex')
+subplot(4,1,3)
+plot(time, vicon(:,6), time, x_hat(:,9))
+ylabel('$q_2$','interpreter','latex')
+xlabel('time (s)')
+legend('vicon','$\hat{x}$','interpreter','latex')
+subplot(4,1,4)
+plot(time, vicon(:,7), time, x_hat(:,10))
+ylabel('$q_3$','interpreter','latex')
+xlabel('time (s)')
+legend('vicon','$\hat{x}$','interpreter','latex')
+
+
 
