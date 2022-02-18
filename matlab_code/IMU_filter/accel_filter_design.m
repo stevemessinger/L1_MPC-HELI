@@ -22,7 +22,7 @@ load('mit_vicon.mat') %load MIT imu data
 
 run_case = 'mit'; %change runcase to 'test', 'mit', 'data_#"
 freq_analysis = 1; % perform fft of data (1) or not (0)
-plot_filtered_data = 0; % plot filtered versus actual data (1) or not (0)
+plot_filtered_data = 1; % plot filtered versus actual data (1) or not (0)
 
 %% FILTER DESIGN 
 
@@ -33,8 +33,7 @@ if freq_analysis
         case 'mit'
             data = [mitimuquad1(:,1) mitimuquad1(:,5:7) mitimuquad1(:,2:4)];
     end
-    data_avg = 0 * [movmean(data(:,1:4),50),movmean(data(:,5:7),50)];
-
+    data_avg = [movmean(data(:,1:4),50),movmean(data(:,5:7),50)];
     noise = data - data_avg;
     
     
@@ -113,10 +112,10 @@ filt_imu = zeros(size(data));
 
 % Butterworth Filter Design 
 % acceleromter filter
-Rp = 1;
-Rs = 6; 
-Wp = [0.08,8]/(Fs/2); %pass band 0.075 10
-Ws = [0.01,12]/(Fs/2);% [0.025, 15]
+Rp = 3;
+Rs = 60; 
+Wp = [2]/(Fs/2); %pass band 0.075 10
+Ws = [4]/(Fs/2);% [0.025, 15]
 [n1,Wn1] = buttord(Wp,Ws,Rp,Rs);
 
 [b,a] = butter(n1,Wn1);   % Get filter coeff of butter filter
@@ -126,8 +125,8 @@ filt_imu(:,1:4) = filtfilt(b,a, data(:,1:4)); % zero phase delay low-pass filter
 % gyro filter 
 Rp = 1; 
 Rs = 10; 
-Wp = 10/(Fs/2); 
-Ws = 15/(Fs/2);
+Wp = 20/(Fs/2); 
+Ws = 25/(Fs/2);
 [n2,Wn2] = buttord(Wp,Ws,Rp,Rs);
 
 [b,a] = butter(n2,Wn2);   % Get filter coeff of butter filter
@@ -136,17 +135,28 @@ filt_imu(:,5:7) = filtfilt(b,a, data(:,5:7)); % zero phase delay low-pass filter
 %% Double integrate filtered IMU to position
 dt = (data(2:end,1) - data(1:end-1,1))*10.^-9 ;
 
- x = nan(2, length(filt_imu));
- xdot = nan(2, length(filt_imu));
- u = filt_imu(:,2);
+ x = nan(6, length(filt_imu));
+ xdot = nan(6, length(filt_imu));
+ nedIMU = nan(3, length(filt_imu));
+ u = [filt_imu(:,2), filt_imu(:,3), filt_imu(:,4)] ;
+ t = 0;
  dcm = quat2dcm([mitviconquad(:,11), mitviconquad(:,8:10)]);
  
- x(:,1) = [mitviconquad(1,5); (mitviconquad(2,5)-mitviconquad(1,5))/(1/181)];
- 
-for k = 1:length(filt_imu)-1
+ temp1 = dcm(:,:,1) * [mitviconquad(1,5); mitviconquad(1,6); mitviconquad(1,7)];
+ temp2 = dcm(:,:,1) * [(mitviconquad(2,5)-mitviconquad(1,5))/(1/181); (mitviconquad(2,6)-mitviconquad(1,6))/(1/181); (mitviconquad(2,7)-mitviconquad(1,7))/(1/181)];  
+ x(:,1) = [temp1(1);temp2(1); temp1(2); temp2(2); temp1(3); temp2(3)] ;
+
+ nedIMU(1,1) = mitviconquad(1,5);
+ i = 1;
+for k = 1:length(filt_imu)-500
     
-    [x(:,k+1), xdot(:,k)] = RK4_zoh('IMUint', x(:,k), u(k), 0, 0, dt(k)); 
-    nedIMU(:,k+1) = dcm(:,:,k) * [x(1,k+1); 0; 0]; 
+    [x(:,k+1), xdot(:,k)] = RK4_zoh('IMUint', x(:,k), u(k,:)', 0, 0, dt(k)); 
+    
+    nedIMU(:,k+1) = dcm(:,:,i)' * [x(1,k+1); x(3,k+1); x(5,k+1)];   
+    if (mitviconquad(k,1)-mitviconquad(1,1))*10.^-9 <= t
+       i = i+2;
+    end
+    t = t+dt(k);
 end
 
 
