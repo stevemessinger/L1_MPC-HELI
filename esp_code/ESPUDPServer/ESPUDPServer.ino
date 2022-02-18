@@ -13,9 +13,17 @@ const char *password = "Pennstate2020";
 
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
 
-std::stringstream AX, AY, AZ, GX, GY, GZ;
+std::stringstream AX, AY, AZ, GX, GY, GZ, calSystem, calAccel, calGyro, calMag, dtStr;
+std::string message;
 
 int numClients;
+
+uint8_t sys, gyro, accel, mag;
+
+float wx, wy, wz, ax, ay, az;
+imu::Vector<3> gyroVector, IMUVector;
+
+int start, dt;
 
 // Callback: receiving any WebSocket message
 void onWebSocketEvent(uint8_t client_num,
@@ -59,9 +67,65 @@ void onWebSocketEvent(uint8_t client_num,
   }
 }
 
-void setup() {
-  Serial.begin(115200);
+// task for performing wifi tasks
+void webSocketTask(void* pvParameters) {
+  WiFi.begin(ssid, password);  // ESP-32 as access point
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
 
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  webSocket.begin();
+  webSocket.onEvent(onWebSocketEvent);
+
+  for (;;) {
+    if (numClients > 0) {
+      for (int i = 0; i <= numClients; i++) {
+
+        AX.str(std::string());
+        AY.str(std::string());
+        AZ.str(std::string());
+        GX.str(std::string());
+        GY.str(std::string());
+        GZ.str(std::string());
+        calSystem.str(std::string());
+        calAccel.str(std::string());
+        calGyro.str(std::string());
+        calMag.str(std::string());
+        dtStr.str(std::string());
+
+
+        AX << std::fixed << std::setprecision(10) << ax;
+        AY << std::fixed << std::setprecision(10) << ay;
+        AZ << std::fixed << std::setprecision(10) << az;
+        GX << std::fixed << std::setprecision(10) << wx;
+        GY << std::fixed << std::setprecision(10) << wy;
+        GZ << std::fixed << std::setprecision(10) << wz;
+        calSystem << std::fixed  << int(sys);
+        calAccel << std::fixed  << int(accel);
+        calGyro << std::fixed  << int(gyro);
+        calMag << std::fixed  << int(mag);
+        dtStr <<std::fixed << int(dt);
+
+        message = AX.str() + ":" + AY.str() + ":" + AZ.str() + ":" +
+                  GX.str() + ":" + GY.str() + ":" + GZ.str() + ":" +
+                  calSystem.str() + ":" + calAccel.str() + ":" + calGyro.str() + ":" + calMag.str() + ":" +
+                  dtStr.str();
+        webSocket.sendTXT(i, message.c_str());
+      }
+    }
+    webSocket.loop();
+  }
+}
+
+// task for collecting/updating IMU data
+void dataCollectionTask(void* pvParameters) {
+  start = millis();
   /* Initialise the sensor */
   if (!bno.begin())
   {
@@ -70,64 +134,49 @@ void setup() {
     abort();
   }
 
-  WiFi.begin(ssid, password);  // ESP-32 as access point
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
-  
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  
-  webSocket.begin();
-  webSocket.onEvent(onWebSocketEvent);
+  for (;;) {
+    gyroVector = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
+    IMUVector = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
+    bno.getCalibration(&sys, &gyro, &accel, &mag);
 
+    wx = gyroVector.x();
+    wy = gyroVector.y();
+    wz = gyroVector.z();
+
+    ax = IMUVector.x();
+    ay = IMUVector.y();
+    az = IMUVector.z();
+
+    dt = millis()-start;
+    start = millis();
+  }
+}
+
+void setup() {
+  Serial.begin(115200);
+
+  // create task for wifi operations (wifi should only be on core 0)
+  xTaskCreate(
+    webSocketTask,
+    "WifiTask",
+    10000,
+    NULL,
+    1,
+    NULL
+  );
+
+  //create task for IMU data collection operations (core 1 is free!)
+  xTaskCreate(
+    dataCollectionTask,
+    "IMUTask",
+    10000,
+    NULL,
+    1,
+    NULL
+  );
 }
 
 void loop() {
-  auto start = millis();
-  delay(5);
-
-  imu::Vector<3> gyro = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
-  imu::Vector<3> IMU = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
-
-  float wx = gyro.x();
-  float wy = gyro.y();
-  float wz = gyro.z();
-
-  float ax = IMU.x();
-  float ay = IMU.y();
-  float az = IMU.z();
-
-  if(numClients > 0){
-    for(int i = 0; i <= numClients; i++){
-
-          AX.str(std::string());
-          AY.str(std::string());
-          AZ.str(std::string());
-          GX.str(std::string());
-          GY.str(std::string());
-          GZ.str(std::string());
-
-          AX << std::fixed << std::setprecision(10) << ax;
-          AY << std::fixed << std::setprecision(10) << ay;
-          AZ << std::fixed << std::setprecision(10) << az;
-          GX << std::fixed << std::setprecision(10) << wx;
-          GY << std::fixed << std::setprecision(10) << wy;
-          GZ << std::fixed << std::setprecision(10) << wz;
-
-          std::string IMUData = AX.str() + ":" + AY.str() + ":" + AZ.str() + ":" +
-                                GX.str() + ":" + GY.str() + ":" + GZ.str();
-          
-          webSocket.sendTXT(i, IMUData.c_str());
-    }
-  }
-
-  webSocket.loop();
-  auto now = millis();
-  Serial.print("dt: ");
-  Serial.println(now - start);
-  start = now;
+  delay(1);
+  // nothing in loop, everything done in tasks
 }
