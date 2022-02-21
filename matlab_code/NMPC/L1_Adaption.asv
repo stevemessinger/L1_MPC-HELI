@@ -62,10 +62,6 @@ PHI = A_s\((e^(A_s*k)) - eye(6));
 G = [g g_T]; 
 mu = (e^(A_s*k))*(z_hat - z); 
 
-sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
-sigma_m = sigma(1:4)'; 
-sigma_um = sigma(5:6)'; 
-
 u_L1 = u_L1*e^(-w_co*k) - sigma_m*(1 - e^(-w_co*k)); 
 z_hat = z_hat + (f + g*(u_L1 + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*k; 
 end

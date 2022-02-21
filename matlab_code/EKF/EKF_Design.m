@@ -59,7 +59,7 @@ end
 %% SIMULATION
 % allocate space for arrays
 x_hat = nan(max(length(vicon_data),length(imu_data)),16); % states [1:p_x 2:p_y 3:p_z 4:v_x 5:v_y 6:v_z 7:q0 8:q1 9:q2 10:q3 11:b_ax 12:b_ay 13:b_az 14:b_wx 15:b_wy 16:b_wz] 
-y = nan(max(length(vicon_data),length(imu_data)),10);
+y = nan(max(length(vicon_data),length(imu_data)),7);
 imu = nan(max(length(vicon_data),length(imu_data)),6); % [ax ay az gx gy gz]
 vicon = nan(max(length(vicon_data),length(imu_data)),7); % [pos_x pos_y pos_z q0 q1 q2 q3]
 P = zeros(16,16,length(vicon_data)); %EKF covariance matrix 
@@ -67,15 +67,17 @@ time = zeros(1,length(dt)+1);
 %assign initial conditions
 time(1) = vicon_data(1,1); 
 vicon(1,:) = vicon_data(1,2:8);
-x_hat(1,:) = [vicon_data(1,2:4) 1  1.5 0 vicon_data(1,5:8) 0.00001 0.00001 0.00001 zeros(1,3)]; 
+x_hat(1,:) = [vicon_data(1,2:4) 1  1.5 0 vicon_data(1,5:8) 0.00001 0.00001 0.00001 0.00001 0.00001 0.00001 ]; 
 
 %EKF filter setup
 P(:,:,1) = eye(16); %initial covariance matrix
-Q = diag([   1      1      1      0.1      0.1      0.1   0.001 0.001 0.001 0.001   0     0     0     0     0     0]);
+Q = diag([   0.1^2      0.1^2      0.1^2      0.01^2      0.01^2      0.01^2   0.01^2 0.01^2 0.01^2 0.01^2   0.000^2     0.000^2     0.000^2    0.000^2    0.000^2     0.000^2]);
           %pos_x  pos_y  pos_z  vel_x  vel_y  vel_z  q0    q1    q2    q3  %b_ax  b_ay  b_az  b_wx  b_wy  b_wz
-R = diag([  0      0     0    0.001   0.001   0.001    0     0     0     0]); 
+R = diag([  0.00001^2    0.00001^2    0.00001^2    0.00001^2     0.00001^2     0.00001^2    0.00001^2]); 
          %pos_x  pos_y  pos_z vx vy  vz   q0    q1    q2    q3
          
+Q = eye(16); 
+R = eye(7); 
 %initialize counters
 vicon_counter = 1; 
 imu_counter = 1; 
@@ -99,18 +101,18 @@ for k = 1:max(length(vicon_data),length(imu_data))-1
     end
     
     y(k+1,:) = y(k,:); 
-        
+    if k < 6 
+        vicon_vel(k,:) = [1,1.5,0];
+    else
+        vicon_vel(k,:) = (vicon(k+1,1:3) - vicon(k-5,1:3))./(dt(k)); 
+    end
+    vicon_n(k+1,:) = vicon(k+1,:);%+[0.1 0.1 0.1 0.01 0.01 0.01 0.01].*randn(1,7)./sqrt(dt(k));    
     %EKF update occurs -> here we assume that the Vicon and IMU data
     %are coming at a rate faster than the filter is being ran so an "update
     %step" occurs each time the EKF is called
     if time(k) >= ekf_time(ekf_counter)
-        if k < 3 
-            vicon_vel = [1,1.5,0];
-        else
-            vicon_vel(k,:) = (vicon(k+1,1:3) - vicon(k-2,1:3))./(1/ekf_freq); 
-        end
         %EKF measurment model
-        y(k+1,:) = [vicon(k+1,1:3) vicon_vel(k,:) vicon(k+1,4:7)];
+        y(k+1,:) = [vicon_n(k+1,1:3)  vicon_n(k+1,4:7)];
         % EKF Process Model 
         % integrate EKF equations using RK4
         xdot1 = derivative(x_hat(k,:), imu(k+1,:), time(k));
@@ -154,14 +156,15 @@ for k = 1:max(length(vicon_data),length(imu_data))-1
         % EKF measurment model 
         % if we get a sensor measurement update the EKF
         % calculate C matrix 
-%         C = [eye(3) zeros(3,13)
-%              zeros(4,6) eye(4) zeros(4,6)]; 
-        C = [eye(10) zeros(10,6)];
+        C = [eye(3) zeros(3,13)
+             zeros(4,6) eye(4) zeros(4,6)]; 
+%         C = [eye(10) zeros(10,6)];
         %make sensor estimate of measurement using x_hat 
         h_hat = C*x_hat(k+1,:)'; 
         % update hybrid EKF
         K = P(:,:,k+1)*C'/(C*P(:,:,k+1)*C' + R); 
         x_hat(k+1,:) = x_hat(k+1,:)' + K*(y(k+1,:)' - h_hat);
+        P(:,:,k+1) = (eye(16)-K*C)*P(:,:,k+1); 
         ekf_counter = ekf_counter + 1; 
     else 
         % no EKF update
@@ -227,6 +230,12 @@ plot(time, vicon(:,7), time, x_hat(:,10))
 ylabel('$q_3$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
+
+figure(3) 
+plot(time, x_hat(:,11:16))
+legend('b_{a_x}','b_{a_y}','b_{a_z}','b_{w_x}','b_{w_y}','b_{w_z}')
+xlabel('time (s)')
+
 
 
 

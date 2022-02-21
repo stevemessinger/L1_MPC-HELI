@@ -20,7 +20,7 @@ function xdot = derivative(x, imu, t)
              2*(q1*q3 - q0*q2) 2*(q2*q3 - q0*q1) 1-2*(q1^2 + q2^2)];
     
     xdot(1:3) = [vx;vy;vz]; 
-    xdot(4:6) = T_bi*([ax;ay;az] - [b_x;b_y;b_z]) + [0;0;0]; % linear accelerations
+    xdot(4:6) = T_bi*([ax;ay;az] - [b_x;b_y;b_z]);% + [0;0;9.81]; % linear accelerations
     
     q_dot_mat = [    0           -(wx-b_wx)   -(wy-b_wy)    -(wz-b_wz);
                      (wx-b_wx)        0        (wz-b_wz)    -(wy-b_wy);
