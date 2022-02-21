@@ -42,7 +42,7 @@ BEGIN_ACADO;
     
     %% OCP
     startTime = 0;
-    endTime = 3;
+    endTime = 1;
     freq = 10;
     
     ocp = acado.OCP(startTime, endTime, endTime*freq);
@@ -50,7 +50,10 @@ BEGIN_ACADO;
     h = {x, y, z, qw, qx, qy, qz, xd, yd, zd, p, q, r};
     
     Q = eye(13);
-    
+        
+    Q(1,1) = 10;
+    Q(2,2) = 10;
+    Q(3,3) = 10;
     Q(4,4) = 5;
     Q(5,5) = 5;
     Q(6,6) = 5;
@@ -81,13 +84,13 @@ BEGIN_ACADO;
     ocp.subjectTo(-yawMax <= yaw <= yawMax);
 
     %% Optimization Algorithm
-    algo = acado.RealTimeAlgorithm(ocp, 0.1); % Set up the optimization algorithm
+    algo = acado.RealTimeAlgorithm(ocp, 0.02); % Set up the optimization algorithm
     
     algo.set('INTEGRATOR_TYPE', 'INT_RK45');
     algo.set( 'INTEGRATOR_TOLERANCE',   1e-6);    
     algo.set( 'ABSOLUTE_TOLERANCE',     1e-4 );
     
-    algo.set('MAX_NUM_ITERATIONS', 3);
+    algo.set('MAX_NUM_ITERATIONS', 2);
 
     algo.set( 'HESSIAN_APPROXIMATION', 'GAUSS_NEWTON' );  % Example setting hessian approximation
     %algo.set( 'HESSIAN_APPROXIMATION', 'CONSTANT_HESSIAN' );  % Other possible settings
@@ -106,12 +109,30 @@ BEGIN_ACADO;
 END_ACADO;
 
 %% Run a simulation
-load('result.mat')
-trajectory = zeros(size(result));
-trajectory(:,1:8) = result(:,1:8);
+load('result.mat');
+load('Melon1.mat');
+load('lemniscate.mat');
+data = Melon1; % choose reference trajectory here
 
-dt=0.1; % time step
-endTime = 50;
+trajectory = zeros(length(data(:,1)), 14);
+trajectory(:,1) = data(:,1);
+trajectory(:,2) = data(:,18);
+trajectory(:,3) = -data(:,19);
+trajectory(:,4) = -data(:,20);
+trajectory(:,5) = data(:,11);
+trajectory(:,6) = data(:,8);
+trajectory(:,7) = -data(:,9);
+trajectory(:,8) = -data(:,10);
+trajectory(:,9) = data(:,15);
+trajectory(:,10) = -data(:,16);
+trajectory(:,11) = -data(:,17);
+trajectory(:,12) = data(:,5);
+trajectory(:,13) = -data(:,6);
+trajectory(:,14) = -data(:,7);
+
+
+dt=0.02; % time step
+endTime = floor(trajectory(end,1));
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
 f_dyn = 'heliDynamics';
@@ -125,7 +146,12 @@ params.K = 1000/params.tau * pi/180;
 %************************************
 % adaptive element parameters
 w_co = 15; %cut off frequency
-A_s = eye(6); %adaption gains (Hurwitz)
+A_s = [1,1,1,0,0,0;
+       1,1,1,0,0,0;
+       0,1,1,1,0,0;
+       0,1,1,1,0,0;
+       0,0,1,1,1,0;
+       0,0,1,1,1,1]; %adaption gains (Hurwitz)
 tau_c = 0.05; %first order z thrust response 
 tau_p = 0.05; %first order p response 
 tau_q = 0.05; %first order q response 
@@ -151,13 +177,12 @@ x(1,:) = x0;
 
 k = 1;
 while t(k)<endTime
-    
-    tic;
+
     out = simpleHeliMPC_LIVE_RUN(x(k,:), t(k), trajectory);
-    toc;
     
     u_mpc = out.U;
     
+    %{
     %************************************
     %THIS GOES IN THE SIMULATION LOOP 
     %************************************
@@ -194,21 +219,21 @@ while t(k)<endTime
 
     u_L1 = u_L1*exp(-w_co*k) - sigma_m*(1 - exp(-w_co*k)); 
     z_hat = z_hat + (f + g*(u_L1 + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*k; 
-    
+    %}
+
     u(k,:) = u_mpc;
     
     [x(k+1,:),xdot(k,:)]= RK4_zoh(f_dyn, x(k,:), u(k,:), t, params, dt);
     
-    
-    
+    disp(t(k));
     k = k + 1;
 end
 
-
-%vis.time = t;
-%vis.signals.values = x(:,2:end);
-
 %% plotting
+close all;
+vis.time = t;
+vis.signals.values = x;
+
 figure('name', 'position');
 subplot(3,1,1);
 plot(t, x(:,1), trajectory(:,1), trajectory(:,2));
@@ -224,7 +249,17 @@ subplot(3,1,3);
 plot(t, x(:,3), trajectory(:,1), trajectory(:,4));
 ylabel('z pos (m)');
 xlabel('time (sec)');
-legend('state', 'reference');
+
+figure('name', '3d')
+hold on;
+plot3(x(:,1), x(:,2), x(:,3));
+plot3(x(1,1), x(1,2), x(1,3),'o')
+plot3(x(end,1), x(end,2), x(end,3), 'x');
+ylabel('E pos (m)');
+xlabel('N pos(m)');
+zlabel('D pos (m)');
+
+legend('trajectory', 'start', 'end');
 
 euler = quat2eul(x(:,4:7), 'XYZ');
 eulerRef = quat2eul(trajectory(:,5:8), 'XYZ');
@@ -259,6 +294,26 @@ subplot(4,1,4)
 plot(t, x(:,7), trajectory(:,1), trajectory(:,8));
 ylabel('qz')
 xlabel('time (sec)')
+
+
+figure('name', 'velocity')
+subplot(4,1,1)
+plot(t, x(:,8), trajectory(:,1), trajectory(:,9))
+ylabel('x vel (m/s)')
+
+subplot(4,1,2)
+plot(t, x(:,9), trajectory(:,1),trajectory(:,10))
+ylabel('y vel (m/s)');
+
+subplot(4,1,3)
+plot(t, x(:,10), trajectory(:,1), trajectory(:,11));
+ylabel('z vel (m/s)');
+
+subplot(4,1,4)
+plot(t, sqrt(x(:,8).* x(:,8) + x(:,9).* x(:,9) + x(:,10).* x(:,10)));
+ylabel('total velocity (m/s)')
+xlabel('time (sec)');
+
 
 figure('name', 'rates')
 subplot(3,1,1);

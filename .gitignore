@@ -1,3 +1,4 @@
 ros_node/taranis_rec/.vscode/**
 ros_node/espcomm/.vscode/**
 ros_node/vicon_bridge/.vscode/**
+*.mexw64
