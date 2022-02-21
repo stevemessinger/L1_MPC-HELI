@@ -1,0 +1,36 @@
+function xdot = heliDynamics(state, u, t, params, dt)
+    x
+    x = state(1);
+    y = state(2);
+    z = state(3);
+    qw = state(4);
+    qx = state(5);
+    qy = state(6);
+    qz = state(7);
+    xd = state(8);
+    yd = state(9);
+    zd = state(10);
+    p = state(11);
+    q = state(12);
+    r = state(13);
+
+    
+    Cbn = [(qw^2 + qx^2 - qy^2 - qz^2), 2*(qx*qy+qw*qz), 2*(qx*qz-qw*qy);
+           2*(qx*qy-qw*qz), (qw^2 - qx^2 + qy^2 - qz^2), 2*(qy*qz+qw*qx);
+           2*(qx*qz+qw*qy), 2*(qy*qz-qw*qx), (qw^2 - qx^2 - qy^2 + qz^2)]';
+    
+    xdot(1) = xd;
+    = yd;
+    = zd;
+    = 0.5 * (-qx*p - qy*q -qz*r);
+    = 0.5 * (qw*p + qy*r - qz*q);
+    = 0.5 * (qw*q - qx*r + qz*p);
+    = 0.5 * (qw*r + qx*q - qy*p);
+    = 1/mass * Cbn(1,3) * (-1/tau + Kcol * col);
+    = 1/mass * Cbn(2,3) * (-1/tau + Kcol * col);
+    = 1/mass * Cbn(3,3) * (-1/tau + Kcol * col) + 9.81;
+    = -1/tau * p + K*roll);
+    = -1/tau * q + K*pitch);
+    = -1/tau * r + K*yaw);
+
+end

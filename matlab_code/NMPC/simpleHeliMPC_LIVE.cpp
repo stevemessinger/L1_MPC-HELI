@@ -48,11 +48,48 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     mexPrintf("\nACADO Toolkit for Matlab - Developed by David Ariens and Rien Quirynen, 2009-2013 \n"); 
     mexPrintf("Support available at http://www.acadotoolkit.org/matlab \n \n"); 
 
-    if (nrhs != 0){ 
-      mexErrMsgTxt("This problem expects 0 right hand side argument(s) since you have defined 0 MexInput(s)");
+    if (nrhs != 3){ 
+      mexErrMsgTxt("This problem expects 3 right hand side argument(s) since you have defined 3 MexInput(s)");
     } 
  
     TIME autotime;
+    int mexinput0_count = 0;
+    if (mxGetM(prhs[0]) == 1 && mxGetN(prhs[0]) >= 1) 
+       mexinput0_count = mxGetN(prhs[0]);
+    else if (mxGetM(prhs[0]) >= 1 && mxGetN(prhs[0]) == 1) 
+       mexinput0_count = mxGetM(prhs[0]);
+    else 
+       mexErrMsgTxt("Input 0 must be a noncomplex double vector of dimension 1xY.");
+
+    double *mexinput0_temp = NULL; 
+    if( !mxIsDouble(prhs[0]) || mxIsComplex(prhs[0])) { 
+      mexErrMsgTxt("Input 0 must be a noncomplex double vector of dimension 1xY.");
+    } 
+    mexinput0_temp = mxGetPr(prhs[0]); 
+    DVector mexinput0(mexinput0_count);
+    for( int i=0; i<mexinput0_count; ++i ){ 
+        mexinput0(i) = mexinput0_temp[i];
+    } 
+
+    double *mexinput1_temp = NULL; 
+    if( !mxIsDouble(prhs[1]) || mxIsComplex(prhs[1]) || !(mxGetM(prhs[1])==1 && mxGetN(prhs[1])==1) ) { 
+      mexErrMsgTxt("Input 1 must be a noncomplex scalar double.");
+    } 
+    mexinput1_temp = mxGetPr(prhs[1]); 
+    double mexinput1 = *mexinput1_temp; 
+
+    double *mexinput2_temp = NULL; 
+    if( !mxIsDouble(prhs[2]) || mxIsComplex(prhs[2]) ) { 
+      mexErrMsgTxt("Input 2 must be a noncomplex double vector of dimension XxY.");
+    } 
+    mexinput2_temp = mxGetPr(prhs[2]); 
+    DMatrix mexinput2(mxGetM(prhs[2]), mxGetN(prhs[2]));
+    for( int i=0; i<mxGetN(prhs[2]); ++i ){ 
+        for( int j=0; j<mxGetM(prhs[2]); ++j ){ 
+           mexinput2(j,i) = mexinput2_temp[i*mxGetM(prhs[2]) + j];
+        } 
+    } 
+
     DifferentialState x;
     DifferentialState y;
     DifferentialState z;
@@ -114,22 +151,6 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     acadodata_v2(10) = 0;
     acadodata_v2(11) = 0;
     acadodata_v2(12) = 0;
-    DMatrix acadodata_M2;
-    acadodata_M2.read( "simpleHeliMPC_LIVE_data_acadodata_M2.txt" );
-    DVector acadodata_v3(13);
-    acadodata_v3(0) = 0;
-    acadodata_v3(1) = 0;
-    acadodata_v3(2) = 0;
-    acadodata_v3(3) = 1;
-    acadodata_v3(4) = 0;
-    acadodata_v3(5) = 0;
-    acadodata_v3(6) = 0;
-    acadodata_v3(7) = 0;
-    acadodata_v3(8) = 0;
-    acadodata_v3(9) = 0;
-    acadodata_v3(10) = 0;
-    acadodata_v3(11) = 0;
-    acadodata_v3(12) = 0;
     DifferentialEquation acadodata_f1;
     acadodata_f1 << dot(x) == xd;
     acadodata_f1 << dot(y) == yd;
@@ -141,11 +162,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     acadodata_f1 << dot(xd) == ((-2.00000000000000000000e+01)+1.00000000000000000000e+02*col)*(qw*qy+qx*qz)*2.00000000000000000000e+00;
     acadodata_f1 << dot(yd) == ((-2.00000000000000000000e+01)+1.00000000000000000000e+02*col)*(-qw*qx+qy*qz)*2.00000000000000000000e+00;
     acadodata_f1 << dot(zd) == (((-2.00000000000000000000e+01)+1.00000000000000000000e+02*col)*(pow(qw,2.00000000000000000000e+00)-pow(qx,2.00000000000000000000e+00)-pow(qy,2.00000000000000000000e+00)+pow(qz,2.00000000000000000000e+00))+9.81000000000000049738e+00);
-    acadodata_f1 << dot(p) == ((-2.00000000000000000000e+01)*p+2.51327412287183449280e+02*roll);
-    acadodata_f1 << dot(q) == ((-2.00000000000000000000e+01)*q+2.51327412287183449280e+02*pitch);
-    acadodata_f1 << dot(r) == ((-2.00000000000000000000e+01)*r+2.51327412287183449280e+02*yaw);
+    acadodata_f1 << dot(p) == ((-2.00000000000000000000e+01)*p+3.49065850398865904936e+02*roll);
+    acadodata_f1 << dot(q) == ((-2.00000000000000000000e+01)*q+3.49065850398865904936e+02*pitch);
+    acadodata_f1 << dot(r) == ((-2.00000000000000000000e+01)*r+3.49065850398865904936e+02*yaw);
 
-    OCP ocp1(0, 5, 50);
+    OCP ocp1(0, 3, 30);
     ocp1.minimizeLSQ(acadodata_M1, acadodata_f2, acadodata_v2);
     ocp1.subjectTo(acadodata_f1);
     ocp1.subjectTo((-1.00000000000000000000e+00) <= col <= 1.00000000000000000000e+00);
@@ -158,95 +179,38 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     algo1.set( INTEGRATOR_TYPE, INT_RK45 );
     algo1.set( INTEGRATOR_TOLERANCE, 1.000000E-06 );
     algo1.set( ABSOLUTE_TOLERANCE, 1.000000E-04 );
-    algo1.set( MAX_NUM_ITERATIONS, 2 );
+    algo1.set( MAX_NUM_ITERATIONS, 3 );
     algo1.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
 
-    StaticReferenceTrajectory referencetrajectory(acadodata_M2);
+    StaticReferenceTrajectory referencetrajectory(mexinput2);
     Controller controller1( algo1,referencetrajectory );
+    controller1.init(mexinput1, mexinput0);
+    controller1.step(mexinput1, mexinput0);
 
-    OutputFcn acadodata_f3;
-
-    DynamicSystem dynamicsystem2( acadodata_f1,acadodata_f3 );
-    Process process3( dynamicsystem2,INT_RK45 );
-
-    SimulationEnvironment algo2(0, 20, process3, controller1);
-     algo2.init(acadodata_v3);
-    returnValue returnvalue = algo2.run();
-
-
-    VariablesGrid out_processout; 
-    VariablesGrid out_feedbackcontrol; 
-    VariablesGrid out_feedbackparameter; 
-    VariablesGrid out_states; 
-    VariablesGrid out_algstates; 
-    algo2.getSampledProcessOutput(out_processout);
-    algo2.getProcessDifferentialStates(out_states);
-    algo2.getFeedbackControl(out_feedbackcontrol);
-    const char* outputFieldNames[] = {"STATES_SAMPLED", "CONTROLS", "PARAMETERS", "STATES", "ALGEBRAICSTATES", "CONVERGENCE_ACHIEVED"}; 
-    plhs[0] = mxCreateStructMatrix( 1,1,6,outputFieldNames ); 
-    mxArray *OutSS = NULL;
-    double  *outSS = NULL;
-    OutSS = mxCreateDoubleMatrix( out_processout.getNumPoints(),1+out_processout.getNumValues(),mxREAL ); 
-    outSS = mxGetPr( OutSS );
-    for( int i=0; i<out_processout.getNumPoints(); ++i ){ 
-      outSS[0*out_processout.getNumPoints() + i] = out_processout.getTime(i); 
-      for( int j=0; j<out_processout.getNumValues(); ++j ){ 
-        outSS[(1+j)*out_processout.getNumPoints() + i] = out_processout(i, j); 
-       } 
+    const char* outputFieldNames[] = {"U", "P"}; 
+    plhs[0] = mxCreateStructMatrix( 1,1,2,outputFieldNames ); 
+    mxArray *OutU = NULL;
+    double  *outU = NULL;
+    OutU = mxCreateDoubleMatrix( 1,controller1.getNU(),mxREAL ); 
+    outU = mxGetPr( OutU );
+    DVector vec_outU; 
+    controller1.getU(vec_outU); 
+    for( int i=0; i<vec_outU.getDim(); ++i ){ 
+        outU[i] = vec_outU(i); 
     } 
 
-    mxSetField( plhs[0],0,"STATES_SAMPLED",OutSS );
-    mxArray *OutS = NULL;
-    double  *outS = NULL;
-    OutS = mxCreateDoubleMatrix( out_states.getNumPoints(),1+out_states.getNumValues(),mxREAL ); 
-    outS = mxGetPr( OutS );
-    for( int i=0; i<out_states.getNumPoints(); ++i ){ 
-      outS[0*out_states.getNumPoints() + i] = out_states.getTime(i); 
-      for( int j=0; j<out_states.getNumValues(); ++j ){ 
-        outS[(1+j)*out_states.getNumPoints() + i] = out_states(i, j); 
-       } 
-    } 
-
-    mxSetField( plhs[0],0,"STATES",OutS );
-    mxArray *OutC = NULL;
-    double  *outC = NULL;
-    OutC = mxCreateDoubleMatrix( out_feedbackcontrol.getNumPoints(),1+out_feedbackcontrol.getNumValues(),mxREAL ); 
-    outC = mxGetPr( OutC );
-    for( int i=0; i<out_feedbackcontrol.getNumPoints(); ++i ){ 
-      outC[0*out_feedbackcontrol.getNumPoints() + i] = out_feedbackcontrol.getTime(i); 
-      for( int j=0; j<out_feedbackcontrol.getNumValues(); ++j ){ 
-        outC[(1+j)*out_feedbackcontrol.getNumPoints() + i] = out_feedbackcontrol(i, j); 
-       } 
-    } 
-
-    mxSetField( plhs[0],0,"CONTROLS",OutC );
     mxArray *OutP = NULL;
     double  *outP = NULL;
-    OutP = mxCreateDoubleMatrix( out_feedbackparameter.getNumPoints(),1+out_feedbackparameter.getNumValues(),mxREAL ); 
+    OutP = mxCreateDoubleMatrix( 1,controller1.getNP(),mxREAL ); 
     outP = mxGetPr( OutP );
-    for( int i=0; i<out_feedbackparameter.getNumPoints(); ++i ){ 
-      outP[0*out_feedbackparameter.getNumPoints() + i] = out_feedbackparameter.getTime(i); 
-      for( int j=0; j<out_feedbackparameter.getNumValues(); ++j ){ 
-        outP[(1+j)*out_feedbackparameter.getNumPoints() + i] = out_feedbackparameter(i, j); 
-       } 
+    DVector vec_outP; 
+    controller1.getP(vec_outP); 
+    for( int i=0; i<vec_outP.getDim(); ++i ){ 
+        outP[i] = vec_outP(i); 
     } 
 
-    mxSetField( plhs[0],0,"PARAMETERS",OutP );
-    mxArray *OutZ = NULL;
-    double  *outZ = NULL;
-    OutZ = mxCreateDoubleMatrix( out_algstates.getNumPoints(),1+out_algstates.getNumValues(),mxREAL ); 
-    outZ = mxGetPr( OutZ );
-    for( int i=0; i<out_algstates.getNumPoints(); ++i ){ 
-      outZ[0*out_algstates.getNumPoints() + i] = out_algstates.getTime(i); 
-      for( int j=0; j<out_algstates.getNumValues(); ++j ){ 
-        outZ[(1+j)*out_algstates.getNumPoints() + i] = out_algstates(i, j); 
-       } 
-    } 
-
-    mxSetField( plhs[0],0,"ALGEBRAICSTATES",OutZ );
-    mxArray *OutConv = NULL;
-    if ( returnvalue == SUCCESSFUL_RETURN ) { OutConv = mxCreateDoubleScalar( 1 ); }else{ OutConv = mxCreateDoubleScalar( 0 ); } 
-    mxSetField( plhs[0],0,"CONVERGENCE_ACHIEVED",OutConv );
+    mxSetField( plhs[0],0,"U",OutU );
+    mxSetField( plhs[0],0,"P",OutP );
 
 
     clearAllStaticCounters( ); 

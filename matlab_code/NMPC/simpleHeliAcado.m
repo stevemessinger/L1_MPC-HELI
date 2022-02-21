@@ -58,8 +58,8 @@ BEGIN_ACADO;
     Q(13,13) = 1/(720*pi/180);
     
     ref = zeros(1,13);
-    ref(6) = 1;
-    ref(1) = 0;
+    ref(4) = 1;
+    ref(1) = -5;
     ref(2) = 0;
     ref(3) = -5;
     
