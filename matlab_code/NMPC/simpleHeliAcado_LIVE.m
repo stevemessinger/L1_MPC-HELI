@@ -11,7 +11,7 @@ BEGIN_ACADO;
     refTraj = acado.MexInputMatrix;
     
     %% setup the differential equation
-    f = acado.DifferentialEquation();
+    diffEQ = acado.DifferentialEquation();
     
     DifferentialState x y z qw qx qy qz xd yd zd p q r;
     
@@ -26,19 +26,19 @@ BEGIN_ACADO;
            2*(qx*qy-qw*qz), (qw^2 - qx^2 + qy^2 - qz^2), 2*(qy*qz+qw*qx);
            2*(qx*qz+qw*qy), 2*(qy*qz-qw*qx), (qw^2 - qx^2 - qy^2 + qz^2)]';
     
-    f.add(dot(x) == xd);
-    f.add(dot(y) == yd);
-    f.add(dot(z) == zd);
-    f.add(dot(qw) == 0.5 * (-qx*p - qy*q -qz*r));
-    f.add(dot(qx) == 0.5 * (qw*p + qy*r - qz*q));
-    f.add(dot(qy) == 0.5 * (qw*q - qx*r + qz*p));
-    f.add(dot(qz) == 0.5 * (qw*r + qx*q - qy*p));
-    f.add(dot(xd) == 1/mass * Cbn(1,3) * (-1/tau + Kcol * col));
-    f.add(dot(yd) == 1/mass * Cbn(2,3) * (-1/tau + Kcol * col));
-    f.add(dot(zd) == 1/mass * Cbn(3,3) * (-1/tau + Kcol * col) + 9.81);
-    f.add(dot(p) == -1/tau * p + K*roll);
-    f.add(dot(q) == -1/tau * q + K*pitch);
-    f.add(dot(r) == -1/tau * r + K*yaw);
+    diffEQ.add(dot(x) == xd);
+    diffEQ.add(dot(y) == yd);
+    diffEQ.add(dot(z) == zd);
+    diffEQ.add(dot(qw) == 0.5 * (-qx*p - qy*q -qz*r));
+    diffEQ.add(dot(qx) == 0.5 * (qw*p + qy*r - qz*q));
+    diffEQ.add(dot(qy) == 0.5 * (qw*q - qx*r + qz*p));
+    diffEQ.add(dot(qz) == 0.5 * (qw*r + qx*q - qy*p));
+    diffEQ.add(dot(xd) == 1/mass * Cbn(1,3) * (-1/tau + Kcol * col));
+    diffEQ.add(dot(yd) == 1/mass * Cbn(2,3) * (-1/tau + Kcol * col));
+    diffEQ.add(dot(zd) == 1/mass * Cbn(3,3) * (-1/tau + Kcol * col) + 9.81);
+    diffEQ.add(dot(p) == -1/tau * p + K*roll);
+    diffEQ.add(dot(q) == -1/tau * q + K*pitch);
+    diffEQ.add(dot(r) == -1/tau * r + K*yaw);
     
     %% OCP
     startTime = 0;
@@ -67,7 +67,7 @@ BEGIN_ACADO;
     
     ocp.minimizeLSQ(Q, h, ref);
     
-    ocp.subjectTo(f);
+    ocp.subjectTo(diffEQ);
     
     % formulated to be equivelent to stick inputs
     colMax = 1;
@@ -120,6 +120,28 @@ params.tau = 0.05;
 params.Kcol = 5*params.mass/params.tau;
 params.K = 1000/params.tau * pi/180;
 
+%************************************
+%THIS GOES PRIOR TO SIMULATION 
+%************************************
+% adaptive element parameters
+w_co = 15; %cut off frequency
+A_s = eye(6); %adaption gains (Hurwitz)
+tau_c = 0.05; %first order z thrust response 
+tau_p = 0.05; %first order p response 
+tau_q = 0.05; %first order q response 
+tau_r = 0.05; %first order r response 
+m = 1; 
+K_col = (5*m)/tau_c; 
+K_phi = (1000/tau_p)*(pi/180);
+K_theta = (1000/tau_q)*(pi/180);
+K_psi = (1000/tau_r)*(pi/180);
+
+%initialize 
+u_L1 = 0; %initialize adaptive element input 
+z_hat = zeros(6,1); 
+G = zeros(6,1); 
+
+% assign vectors
 x = nan(length(t), 13);
 xdot = x;
 u = nan(length(t), 4);
@@ -134,9 +156,50 @@ while t(k)<endTime
     out = simpleHeliMPC_LIVE_RUN(x(k,:), t(k), trajectory);
     toc;
     
-    u(k,:) = out.U;
+    u_mpc = out.U;
+    
+    %************************************
+    %THIS GOES IN THE SIMULATION LOOP 
+    %************************************
+
+    %deconstruct state vector 
+    p_n = x(k,1); p_e = x(k,2); p_d = x(k,3);
+    q0 = x(k,4); q1 = x(k,5); q2 = x(k,6); q3 = x(k,7);
+    v_n = x(k,8); v_e = x(k,9); v_d = x(k,10);
+    p = x(k,11); q = x(k,12); r = x(k,13);
+    %L1-Adaptive Augmentation 
+    e_xb = [1-2*(q2^2+q3^2);2*(q1*q2+q0*q3);2*(q1*q3-q0*q2)]; 
+    e_yb = [2*(q1*q2-q0*q3);1-2*(q1^2+q3^2);2*(q2*q3-q0*q1)]; 
+    e_zb = [2*(q1*q3+q0*q2);2*(q2*q3-q0*q1);1-2*(q1^2+q2^2)]; 
+
+    R_bi = [e_xb, e_yb, e_zb]; %DCM from body to inertial 
+
+    z = [v_n v_e v_d p q r]'; %state vector 
+
+
+    T_mpc = [0;0;(-1/tau_c)+K_col*u_mpc(1)];
+    M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2);(-1/tau_q)*q+K_theta*u_mpc(3);(-1/tau_r)*r+K_psi*u_mpc(4)];
+
+    f = [T_mpc.*e_zb;M_mpc]; %desired dynamics 
+    g = [e_zb e_zb e_zb e_zb;zeros(3,1) eye(3)]; %uncertainty in matched component 
+    g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
+
+    PHI = A_s\((exp(A_s*k)) - eye(6)); 
+    G = [g g_T]; 
+    mu = (exp(A_s*k))*(z_hat - z); 
+
+    sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
+    sigma_m = sigma(1:4); 
+    sigma_um = sigma(5:6); 
+
+    u_L1 = u_L1*exp(-w_co*k) - sigma_m*(1 - exp(-w_co*k)); 
+    z_hat = z_hat + (f + g*(u_L1 + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*k; 
+    
+    u(k,:) = u_mpc;
     
     [x(k+1,:),xdot(k,:)]= RK4_zoh(f_dyn, x(k,:), u(k,:), t, params, dt);
+    
+    
     
     k = k + 1;
 end
