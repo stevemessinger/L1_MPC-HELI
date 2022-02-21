@@ -15,10 +15,12 @@ function xdot = heliDynamics(state, u, t, params, dt)
     q = state(12);
     r = state(13);
     
-    col = u(1);
-    roll = u(2);
-    pitch = u(3);
-    yaw = u(4);
+    col = min(max(u(1),-1),1);
+    roll = min(max(u(2),-1),1);
+    pitch = min(max(u(3),-1),1);
+    yaw = min(max(u(4),-1),1);
+    
+    
 
     
     Cbn = [(qw^2 + qx^2 - qy^2 - qz^2), 2*(qx*qy+qw*qz), 2*(qx*qz-qw*qy);
