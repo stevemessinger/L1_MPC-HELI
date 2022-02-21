@@ -1,0 +1,35 @@
+Weekly Updates:
+----Accomplished-----
+-Bug Fixed Heli MPC simulation
+	fixed coordinate frame mismatch
+	added plotting of all state data
+
+-Heli MPC Sim tested on several acrobatic quad trajectories
+	Lemniscate
+	Melon
+	quad race track
+	inplace flip (upside-down flight)
+
+-Created 3D visualization for heli simulation
+
+-EKF written in Matlab
+
+-Adative element written in matlab
+
+-planned system ID tests
+	doublettes in 3 axis'
+	attempted to perform tests but the ESP batteries were dead
+
+-scheduled Heli flight day
+	3-1-2022 (tentative)
+
+----To Do----
+-perform system ID tests on quadcopter for data analysis practice
+
+-test and apply EKF to simulation data
+	test in matlab
+	created ros node
+
+-Impliment ACADO in ros node for real time control
+
+-test controller in on gathered heli trajectories from manual flight
