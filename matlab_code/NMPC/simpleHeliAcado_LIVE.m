@@ -84,7 +84,7 @@ BEGIN_ACADO;
     ocp.subjectTo(-yawMax <= yaw <= yawMax);
 
     %% Optimization Algorithm
-    algo = acado.RealTimeAlgorithm(ocp, 0.02); % Set up the optimization algorithm
+    algo = acado.RealTimeAlgorithm(ocp, 0.0025); % Set up the optimization algorithm
     
     algo.set('INTEGRATOR_TYPE', 'INT_RK45');
     algo.set( 'INTEGRATOR_TOLERANCE',   1e-6);    
@@ -131,7 +131,7 @@ trajectory(:,13) = -data(:,6);
 trajectory(:,14) = -data(:,7);
 
 
-dt=0.02; % time step
+dt=0.0025; % time step
 endTime = floor(trajectory(end,1));
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
@@ -145,8 +145,8 @@ params.K = 1000/params.tau * pi/180;
 %THIS GOES PRIOR TO SIMULATION 
 %************************************
 % adaptive element parameters
-w_co = 10; %cut off frequency
-A_s = 1*[1,0,0,0,0,0;
+w_co = 100; %cut off frequency
+A_s = -5*[1,0,0,0,0,0;
        0,1,0,0,0,0;
        0,0,1,0,0,0;
        0,0,0,1,0,0;
@@ -174,6 +174,7 @@ u = nan(length(t), 4);
 
 x0 = trajectory(1,2:end);
 x(1,:) = x0;
+z_hat = [x0(8),x0(9),x0(10),x0(11),x0(12),x0(13)]'; 
 
 k = 1;
 while t(k)<endTime
@@ -198,9 +199,9 @@ while t(k)<endTime
 
     R_bi = [e_xb, e_yb, e_zb]'; %DCM from body to inertial 
 
-    e_xb = R_bi(1,:)'; 
-    e_yb = R_bi(2,:)';
-    e_zb = R_bi(3,:)';
+%     e_xb = R_bi(1,:)'; 
+%     e_yb = R_bi(2,:)';
+%     e_zb = R_bi(3,:)';
 
     z = [v_n v_e v_d p q r]'; %state vector 
 
