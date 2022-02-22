@@ -1,4 +1,4 @@
-
+ 
 close all;
 clc
 
@@ -18,7 +18,7 @@ BEGIN_ACADO;
     Control col roll pitch yaw;
     
     tau = 0.05;
-    K = 1000/tau * pi/180;
+    K = 1000/tau * pi/180; 
     mass = 1;
     Kcol = 5*mass/tau;
     
@@ -84,7 +84,7 @@ BEGIN_ACADO;
     ocp.subjectTo(-yawMax <= yaw <= yawMax);
 
     %% Optimization Algorithm
-    algo = acado.RealTimeAlgorithm(ocp, 0.02); % Set up the optimization algorithm
+    algo = acado.RealTimeAlgorithm(ocp, 0.0025); % Set up the optimization algorithm
     
     algo.set('INTEGRATOR_TYPE', 'INT_RK45');
     algo.set( 'INTEGRATOR_TOLERANCE',   1e-6);    
@@ -112,7 +112,7 @@ END_ACADO;
 load('result.mat');
 load('Melon1.mat');
 load('lemniscate.mat');
-data = Melon1; % choose reference trajectory here
+data = lemniscate; % choose reference trajectory here
 
 trajectory = zeros(length(data(:,1)), 14);
 trajectory(:,1) = data(:,1);
@@ -131,8 +131,8 @@ trajectory(:,13) = -data(:,6);
 trajectory(:,14) = -data(:,7);
 
 
-dt=0.02; % time step
-endTime = floor(trajectory(end,1));
+dt=0.0025; % time step
+endTime = 10;
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
 f_dyn = 'heliDynamics';

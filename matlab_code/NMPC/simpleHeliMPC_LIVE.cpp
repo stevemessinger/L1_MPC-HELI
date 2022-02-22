@@ -175,7 +175,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     ocp1.subjectTo((-1.00000000000000000000e+00) <= yaw <= 1.00000000000000000000e+00);
 
 
-    RealTimeAlgorithm algo1(ocp1, 0.02);
+    RealTimeAlgorithm algo1(ocp1, 0.0025);
     algo1.set( INTEGRATOR_TYPE, INT_RK45 );
     algo1.set( INTEGRATOR_TOLERANCE, 1.000000E-06 );
     algo1.set( ABSOLUTE_TOLERANCE, 1.000000E-04 );
