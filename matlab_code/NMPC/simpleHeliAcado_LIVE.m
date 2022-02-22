@@ -145,13 +145,13 @@ params.K = 1000/params.tau * pi/180;
 %THIS GOES PRIOR TO SIMULATION 
 %************************************
 % adaptive element parameters
-w_co = 15; %cut off frequency
-A_s = [1,1,1,0,0,0;
-       1,1,1,0,0,0;
-       0,1,1,1,0,0;
-       0,1,1,1,0,0;
-       0,0,1,1,1,0;
-       0,0,1,1,1,1]; %adaption gains (Hurwitz)
+w_co = 10; %cut off frequency
+A_s = 1*[1,0,0,0,0,0;
+       0,1,0,0,0,0;
+       0,0,1,0,0,0;
+       0,0,0,1,0,0;
+       0,0,0,0,1,0;
+       0,0,0,0,0,1]; %adaption gains (Hurwitz)
 tau_c = 0.05; %first order z thrust response 
 tau_p = 0.05; %first order p response 
 tau_q = 0.05; %first order q response 
@@ -163,7 +163,7 @@ K_theta = (1000/tau_q)*(pi/180);
 K_psi = (1000/tau_r)*(pi/180);
 
 %initialize 
-u_L1 = 0; %initialize adaptive element input 
+u_L1 = zeros(4,1); %initialize adaptive element input 
 z_hat = zeros(6,1); 
 G = zeros(6,1); 
 
@@ -180,9 +180,8 @@ while t(k)<endTime
 
     out = simpleHeliMPC_LIVE_RUN(x(k,:), t(k), trajectory);
     
-    u_mpc = out.U;
+    u_mpc = out.U';
     
-    %{
     %************************************
     %THIS GOES IN THE SIMULATION LOOP 
     %************************************
@@ -197,31 +196,34 @@ while t(k)<endTime
     e_yb = [2*(q1*q2-q0*q3);1-2*(q1^2+q3^2);2*(q2*q3-q0*q1)]; 
     e_zb = [2*(q1*q3+q0*q2);2*(q2*q3-q0*q1);1-2*(q1^2+q2^2)]; 
 
-    R_bi = [e_xb, e_yb, e_zb]; %DCM from body to inertial 
+    R_bi = [e_xb, e_yb, e_zb]'; %DCM from body to inertial 
+
+    e_xb = R_bi(1,:)'; 
+    e_yb = R_bi(2,:)';
+    e_zb = R_bi(3,:)';
 
     z = [v_n v_e v_d p q r]'; %state vector 
 
 
-    T_mpc = [0;0;(-1/tau_c)+K_col*u_mpc(1)];
+    T_mpc = [0;0;(-1/tau_c)+K_col*u_mpc(1)]./m;
     M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2);(-1/tau_q)*q+K_theta*u_mpc(3);(-1/tau_r)*r+K_psi*u_mpc(4)];
 
-    f = [T_mpc.*e_zb;M_mpc]; %desired dynamics 
+    f = [[0;0;0]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
     g = [e_zb e_zb e_zb e_zb;zeros(3,1) eye(3)]; %uncertainty in matched component 
     g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
 
-    PHI = A_s\((exp(A_s*k)) - eye(6)); 
+    PHI = inv(A_s)*((exp(A_s*dt)) - eye(6)); 
     G = [g g_T]; 
-    mu = (exp(A_s*k))*(z_hat - z); 
+    mu = (exp(A_s*dt))*(z_hat - z); 
 
     sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
     sigma_m = sigma(1:4); 
     sigma_um = sigma(5:6); 
 
-    u_L1 = u_L1*exp(-w_co*k) - sigma_m*(1 - exp(-w_co*k)); 
-    z_hat = z_hat + (f + g*(u_L1 + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*k; 
-    %}
+    u_L1 = u_L1*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
+    z_hat = z_hat + (f + g*(u_L1 + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*dt; 
 
-    u(k,:) = u_mpc;
+    u(k,:) = u_L1;
     
     [x(k+1,:),xdot(k,:)]= RK4_zoh(f_dyn, x(k,:), u(k,:), t, params, dt);
     

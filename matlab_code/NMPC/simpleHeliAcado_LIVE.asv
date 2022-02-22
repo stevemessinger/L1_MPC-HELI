@@ -42,7 +42,7 @@ BEGIN_ACADO;
     
     %% OCP
     startTime = 0;
-    endTime = 2;
+    endTime = 1;
     freq = 10;
     
     ocp = acado.OCP(startTime, endTime, endTime*freq);
@@ -50,7 +50,10 @@ BEGIN_ACADO;
     h = {x, y, z, qw, qx, qy, qz, xd, yd, zd, p, q, r};
     
     Q = eye(13);
-    
+        
+    Q(1,1) = 10;
+    Q(2,2) = 10;
+    Q(3,3) = 10;
     Q(4,4) = 5;
     Q(5,5) = 5;
     Q(6,6) = 5;
@@ -81,13 +84,13 @@ BEGIN_ACADO;
     ocp.subjectTo(-yawMax <= yaw <= yawMax);
 
     %% Optimization Algorithm
-    algo = acado.RealTimeAlgorithm(ocp, 0.05); % Set up the optimization algorithm
+    algo = acado.RealTimeAlgorithm(ocp, 0.02); % Set up the optimization algorithm
     
     algo.set('INTEGRATOR_TYPE', 'INT_RK45');
     algo.set( 'INTEGRATOR_TOLERANCE',   1e-6);    
     algo.set( 'ABSOLUTE_TOLERANCE',     1e-4 );
     
-    algo.set('MAX_NUM_ITERATIONS', 5);
+    algo.set('MAX_NUM_ITERATIONS', 2);
 
     algo.set( 'HESSIAN_APPROXIMATION', 'GAUSS_NEWTON' );  % Example setting hessian approximation
     %algo.set( 'HESSIAN_APPROXIMATION', 'CONSTANT_HESSIAN' );  % Other possible settings
@@ -109,24 +112,26 @@ END_ACADO;
 load('result.mat');
 load('Melon1.mat');
 load('lemniscate.mat');
-trajectory = zeros(length(lemniscate(:,1)), 14);
-trajectory(:,1) = lemniscate(:,1);
-trajectory(:,2) = lemniscate(:,18);
-trajectory(:,3) = lemniscate(:,19);
-trajectory(:,4) = lemniscate(:,20);
-trajectory(:,5) = lemniscate(:,11);
-trajectory(:,6) = lemniscate(:,8);
-trajectory(:,7) = lemniscate(:,9);
-trajectory(:,8) = lemniscate(:,10);
-trajectory(:,9) = lemniscate(:,15);
-trajectory(:,10) = lemniscate(:,16);
-trajectory(:,11) = lemniscate(:,17);
-trajectory(:,12:14) = lemniscate(:,5:7);
-trajectory(:,12:14) = lemniscate(:,5:7);
-trajectory(:,12:14) = lemniscate(:,5:7);
+data = Melon1; % choose reference trajectory here
+
+trajectory = zeros(length(data(:,1)), 14);
+trajectory(:,1) = data(:,1);
+trajectory(:,2) = data(:,18);
+trajectory(:,3) = -data(:,19);
+trajectory(:,4) = -data(:,20);
+trajectory(:,5) = data(:,11);
+trajectory(:,6) = data(:,8);
+trajectory(:,7) = -data(:,9);
+trajectory(:,8) = -data(:,10);
+trajectory(:,9) = data(:,15);
+trajectory(:,10) = -data(:,16);
+trajectory(:,11) = -data(:,17);
+trajectory(:,12) = data(:,5);
+trajectory(:,13) = -data(:,6);
+trajectory(:,14) = -data(:,7);
 
 
-dt=0.05; % time step
+dt=0.02; % time step
 endTime = floor(trajectory(end,1));
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
@@ -140,8 +145,13 @@ params.K = 1000/params.tau * pi/180;
 %THIS GOES PRIOR TO SIMULATION 
 %************************************
 % adaptive element parameters
-w_co = 15; %cut off frequency
-A_s = eye(6); %adaption gains (Hurwitz)
+w_co = 0.9;%125.66; %cut off frequency
+A_s = -1*[-0.0001,0,0,0,0,0;
+       0,-0.0001,0,0,0,0;
+       0,0,-0.01,0,0,0;
+       0,0,0,-0.01,0,0;
+       0,0,0,0,-0.01,0;
+       0,0,0,0,0,-0.01]; %adaption gains (Hurwitz)
 tau_c = 0.05; %first order z thrust response 
 tau_p = 0.05; %first order p response 
 tau_q = 0.05; %first order q response 
@@ -153,7 +163,7 @@ K_theta = (1000/tau_q)*(pi/180);
 K_psi = (1000/tau_r)*(pi/180);
 
 %initialize 
-u_L1 = 0; %initialize adaptive element input 
+u_L1 = zeros(4,1); %initialize adaptive element input 
 z_hat = zeros(6,1); 
 G = zeros(6,1); 
 
@@ -167,12 +177,10 @@ x(1,:) = x0;
 
 k = 1;
 while t(k)<endTime
-    
-    tic;
+
     out = simpleHeliMPC_LIVE_RUN(x(k,:), t(k), trajectory);
-    toc;
     
-    u_mpc = out.U;
+    u_mpc = out.U';
     
     %************************************
     %THIS GOES IN THE SIMULATION LOOP 
@@ -190,36 +198,38 @@ while t(k)<endTime
 
     R_bi = [e_xb, e_yb, e_zb]; %DCM from body to inertial 
 
+    e_xb = R_bi(1,:)'; 
+    e_yb = R_bi(2,:)';
+    e_zb = R_bi(3,:)';
+
     z = [v_n v_e v_d p q r]'; %state vector 
 
 
-    T_mpc = [0;0;(-1/tau_c)+K_col*u_mpc(1)];
+    T_mpc = [0;0;(-1/tau_c)+K_col*u_mpc(1)]./m;
     M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2);(-1/tau_q)*q+K_theta*u_mpc(3);(-1/tau_r)*r+K_psi*u_mpc(4)];
 
-    f = [T_mpc.*e_zb;M_mpc]; %desired dynamics 
+    f = [[0;0;0]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
     g = [e_zb e_zb e_zb e_zb;zeros(3,1) eye(3)]; %uncertainty in matched component 
     g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
 
-    PHI = A_s\((exp(A_s*k)) - eye(6)); 
+    PHI = inv(A_s)*((exp(A_s*dt)) - eye(6)); 
     G = [g g_T]; 
-    mu = (exp(A_s*k))*(z_hat - z); 
+    mu = (exp(A_s*dt))*(z_hat - z); 
 
     sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
     sigma_m = sigma(1:4); 
     sigma_um = sigma(5:6); 
 
-    u_L1 = u_L1*exp(-w_co*k) - sigma_m*(1 - exp(-w_co*k)); 
-    z_hat = z_hat + (f + g*(u_L1 + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*k; 
-    
-    u(k,:) = u_mpc;
+    u_L1 = u_L1*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
+    z_hat = z_hat + (f + g*(u_L1 + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*dt; 
+
+    u(k,:) = u_L1;
     
     [x(k+1,:),xdot(k,:)]= RK4_zoh(f_dyn, x(k,:), u(k,:), t, params, dt);
     
     disp(t(k));
     k = k + 1;
 end
-
-
 
 %% plotting
 close all;
