@@ -159,9 +159,9 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     acadodata_f1 << dot(qx) == (p*qw-q*qz+qy*r)*5.00000000000000000000e-01;
     acadodata_f1 << dot(qy) == (p*qz+q*qw-qx*r)*5.00000000000000000000e-01;
     acadodata_f1 << dot(qz) == (-p*qy+q*qx+qw*r)*5.00000000000000000000e-01;
-    acadodata_f1 << dot(xd) == ((-2.00000000000000000000e+01)+1.00000000000000000000e+02*col)*(qw*qy+qx*qz)*2.00000000000000000000e+00;
-    acadodata_f1 << dot(yd) == ((-2.00000000000000000000e+01)+1.00000000000000000000e+02*col)*(-qw*qx+qy*qz)*2.00000000000000000000e+00;
-    acadodata_f1 << dot(zd) == (((-2.00000000000000000000e+01)+1.00000000000000000000e+02*col)*(pow(qw,2.00000000000000000000e+00)-pow(qx,2.00000000000000000000e+00)-pow(qy,2.00000000000000000000e+00)+pow(qz,2.00000000000000000000e+00))+9.81000000000000049738e+00);
+    acadodata_f1 << dot(xd) == (qw*qy+qx*qz)*2.00000000000000000000e+00*4.90500000000000042633e+01*col;
+    acadodata_f1 << dot(yd) == (-qw*qx+qy*qz)*2.00000000000000000000e+00*4.90500000000000042633e+01*col;
+    acadodata_f1 << dot(zd) == ((pow(qw,2.00000000000000000000e+00)-pow(qx,2.00000000000000000000e+00)-pow(qy,2.00000000000000000000e+00)+pow(qz,2.00000000000000000000e+00))*4.90500000000000042633e+01*col+9.81000000000000049738e+00);
     acadodata_f1 << dot(p) == ((-2.00000000000000000000e+01)*p+3.49065850398865904936e+02*roll);
     acadodata_f1 << dot(q) == ((-2.00000000000000000000e+01)*q+3.49065850398865904936e+02*pitch);
     acadodata_f1 << dot(r) == ((-2.00000000000000000000e+01)*r+3.49065850398865904936e+02*yaw);
@@ -175,7 +175,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     ocp1.subjectTo((-1.00000000000000000000e+00) <= yaw <= 1.00000000000000000000e+00);
 
 
-    RealTimeAlgorithm algo1(ocp1, 0.0025);
+    RealTimeAlgorithm algo1(ocp1, 0.01);
     algo1.set( INTEGRATOR_TYPE, INT_RK45 );
     algo1.set( INTEGRATOR_TOLERANCE, 1.000000E-06 );
     algo1.set( ABSOLUTE_TOLERANCE, 1.000000E-04 );

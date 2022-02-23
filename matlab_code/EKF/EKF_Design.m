@@ -74,7 +74,7 @@ P(:,:,1) = eye(16); %initial covariance matrix
 Q = diag([   0.1^2      0.1^2      0.1^2      0.01^2      0.01^2      0.01^2   0.01^2 0.01^2 0.01^2 0.01^2   0.000^2     0.000^2     0.000^2    0.000^2    0.000^2     0.000^2]);
           %pos_x  pos_y  pos_z  vel_x  vel_y  vel_z  q0    q1    q2    q3  %b_ax  b_ay  b_az  b_wx  b_wy  b_wz
 R = diag([  0.00001^2    0.00001^2    0.00001^2    0.00001^2     0.00001^2     0.00001^2    0.00001^2]); 
-         %pos_x  pos_y  pos_z vx vy  vz   q0    q1    q2    q3
+         %pos_x  pos_y  pos_z  q0    q1    q2    q3
          
 Q = eye(16); 
 R = eye(7); 
@@ -101,18 +101,13 @@ for k = 1:max(length(vicon_data),length(imu_data))-1
     end
     
     y(k+1,:) = y(k,:); 
-    if k < 6 
-        vicon_vel(k,:) = [1,1.5,0];
-    else
-        vicon_vel(k,:) = (vicon(k+1,1:3) - vicon(k-5,1:3))./(dt(k)); 
-    end
-    vicon_n(k+1,:) = vicon(k+1,:);%+[0.1 0.1 0.1 0.01 0.01 0.01 0.01].*randn(1,7)./sqrt(dt(k));    
+    
     %EKF update occurs -> here we assume that the Vicon and IMU data
     %are coming at a rate faster than the filter is being ran so an "update
     %step" occurs each time the EKF is called
     if time(k) >= ekf_time(ekf_counter)
         %EKF measurment model
-        y(k+1,:) = [vicon_n(k+1,1:3)  vicon_n(k+1,4:7)];
+        y(k+1,:) = vicon(k+1,:);
         % EKF Process Model 
         % integrate EKF equations using RK4
         xdot1 = derivative(x_hat(k,:), imu(k+1,:), time(k));
@@ -158,7 +153,6 @@ for k = 1:max(length(vicon_data),length(imu_data))-1
         % calculate C matrix 
         C = [eye(3) zeros(3,13)
              zeros(4,6) eye(4) zeros(4,6)]; 
-%         C = [eye(10) zeros(10,6)];
         %make sensor estimate of measurement using x_hat 
         h_hat = C*x_hat(k+1,:)'; 
         % update hybrid EKF
@@ -194,20 +188,20 @@ ylabel('$D_{pos}$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
 subplot(3,2,2)
-plot(time, y(:,4),time, x_hat(:,4))
+plot(time, x_hat(:,4))
 ylabel('$N_{vel}$','interpreter','latex')
 xlabel('time (s)')
-legend('y','$\hat{x}$','interpreter','latex')
+legend('$\hat{x}$','interpreter','latex')
 subplot(3,2,4)
-plot(time, y(:,5), time, x_hat(:,5))
+plot(time, x_hat(:,5))
 ylabel('$E_{vel}$','interpreter','latex')
 xlabel('time (s)')
-legend('y','$\hat{x}$','interpreter','latex')
+legend('$\hat{x}$','interpreter','latex')
 subplot(3,2,6)
-plot(time, y(:,6), time, x_hat(:,6))
+plot(time, x_hat(:,6))
 ylabel('$D_{vel}$','interpreter','latex')
 xlabel('time (s)')
-legend('y','$\hat{x}$','interpreter','latex')
+legend('$\hat{x}$','interpreter','latex')
 
 figure(2) 
 subplot(4,1,1)
