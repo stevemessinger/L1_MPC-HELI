@@ -85,7 +85,7 @@ BEGIN_ACADO;
     ocp.subjectTo(-yawMax <= yaw <= yawMax);
 
     %% Optimization Algorithm
-    algo = acado.RealTimeAlgorithm(ocp, 0.01); % Set up the optimization algorithm
+    algo = acado.RealTimeAlgorithm(ocp, 0.002); % Set up the optimization algorithm
     
     algo.set('INTEGRATOR_TYPE', 'INT_RK45');
     algo.set( 'INTEGRATOR_TOLERANCE',   1e-6);    
@@ -132,7 +132,7 @@ trajectory(:,13) = -data(:,6);
 trajectory(:,14) = -data(:,7);
 
 
-dt=0.01; % time step
+dt=0.002; % time step
 endTime = floor(trajectory(end,1));
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
@@ -164,35 +164,37 @@ K_theta = (1000/tau_q)*(pi/180);
 K_psi = (1000/tau_r)*(pi/180);
 
 %initialize 
-u_L1 = zeros(4,1); %initialize adaptive element input 
+u_L1 = zeros(4,length(t),2); %initialize adaptive element input 
+u_mpc = u_L1; 
 z_hat = zeros(6,1); 
 G = zeros(6,1); 
 
 % assign vectors
-x = nan(length(t), 13);
+x = nan(length(t), 13, 2);
 xdot = x;
-u = nan(length(t), 4);
+u = nan(length(t), 4,2);
 
+for i = 1:2
 x0 = trajectory(1,2:end);
-x(1,:) = x0;
+x(1,:,i) = x0;
 z_hat = [x0(8),x0(9),x0(10),x0(11),x0(12),x0(13)]'; 
 
 k = 1;
-while t(k)<endTime
+while t(k)<endTime-1*dt
 
-    out = simpleHeliMPC_LIVE_RUN(x(k,:), t(k), trajectory);
+    out = simpleHeliMPC_LIVE_RUN(x(k,:,i), t(k), trajectory);
     
-    u_mpc = out.U';
+    u_mpc(:,k,i) = out.U';
     
     %************************************
     %THIS GOES IN THE SIMULATION LOOP 
     %************************************
 
     %deconstruct state vector 
-    p_n = x(k,1); p_e = x(k,2); p_d = x(k,3);
-    q0 = x(k,4); q1 = x(k,5); q2 = x(k,6); q3 = x(k,7);
-    v_n = x(k,8); v_e = x(k,9); v_d = x(k,10);
-    p = x(k,11); q = x(k,12); r = x(k,13);
+    p_n = x(k,1,i); p_e = x(k,2,i); p_d = x(k,3,i);
+    q0 = x(k,4,i); q1 = x(k,5,i); q2 = x(k,6,i); q3 = x(k,7,i);
+    v_n = x(k,8,i); v_e = x(k,9,i); v_d = x(k,10,i);
+    p = x(k,11,i); q = x(k,12,i); r = x(k,13,i);
     %L1-Adaptive Augmentation 
     R_bi = [(q0^2 + q1^2 - q2^2 - q3^2), 2*(q1*q2+q0*q3), 2*(q1*q3-q0*q2);
        2*(q1*q2-q0*q3), (q0^2 - q1^2 + q2^2 - q3^2), 2*(q2*q3+q0*q1);
@@ -204,9 +206,8 @@ while t(k)<endTime
 
     z = [v_n v_e v_d p q r]'; %state vector 
 
-
-    T_mpc = [0;0;K_col*u_mpc(1)]./m;
-    M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2);(-1/tau_q)*q+K_theta*u_mpc(3);(-1/tau_r)*r+K_psi*u_mpc(4)];
+    T_mpc = [0;0;K_col*u_mpc(1,k,i)]./m;
+    M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2,k,i);(-1/tau_q)*q+K_theta*u_mpc(3,k,i);(-1/tau_r)*r+K_psi*u_mpc(4,k,i)];
 
     f = [[0;0;9.81]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
     
@@ -215,23 +216,28 @@ while t(k)<endTime
 
     PHI = inv(A_s)*((exp(A_s*dt)) - eye(6)); 
     G = [g g_T]; 
-    mu = (exp(A_s*dt))*(z_hat - z)*dt; 
+    mu = (exp(A_s*dt))*(z_hat - z); 
 
     sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
     sigma_m = sigma(1:4); 
     sigma_um = sigma(5:6); 
 
-    u_L1 = u_L1*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
-    z_hat = z_hat + (f + g*(u_L1 + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*dt; 
+    u_L1(:,k+1,i) = u_L1(:,k,i)*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
+    z_hat = z_hat + (f + g*(u_L1(:,k+1,i) + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*dt; 
 
-    u(k,:) = u_mpc;% + u_L1/K_col;
+    if i == 1
+        u(k,:,i) = u_mpc(:,k,i);
+    else 
+        u(k,:,i) = u_mpc(:,k,i) + u_L1(:,k+1,i)./[K_col;K_phi;K_theta;K_psi];
+    end
     
-    [x(k+1,:),xdot(k,:)]= RK4_zoh(f_dyn, x(k,:), u(k,:), t, params, dt);
+    [x(k+1,:,i), xdot(k,:,i)] = RK4_zoh(f_dyn, x(k,:,i), u(k,:,i), t(k), params, dt);
     
     disp(t(k));
     k = k + 1;
 end
 
+end
 %% plotting
 % close all;
 vis.time = t;
