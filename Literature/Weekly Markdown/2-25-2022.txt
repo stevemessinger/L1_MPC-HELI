@@ -1,0 +1,24 @@
+Weekly Updates:
+----Accomplished-----
+-Bug Fixing Adaptive element
+	trying different adaptive gains / cutoff frequency
+
+-fixed ESP data collection to ensure no drop outs
+	verified data with desktop tests
+	need to test on a quadcopter
+
+----To Do----
+-finish fixing adaptive element
+	adative element tends to driff tracking when rapid manuvers are performed
+
+-Impliment ACADO in ros node for real time control
+
+-test controller in on gathered heli trajectories from manual flight
+
+-perform system ID tests on quadcopter for data analysis practice
+
+-perform system ID on helidata
+
+-test and apply EKF to simulation data
+	test in matlab
+	create ros node
