@@ -36,9 +36,9 @@ function xdot = heliDynamics(state, u, t, params, dt)
     xdot(7) = 0.5 * (qw*r + qx*q - qy*p);
     xdot(8) = 1/params.mass * Cbn(1,3) * params.Kcol * col;
     xdot(9) = 1/params.mass * Cbn(2,3) * params.Kcol * col;
-    xdot(10) = 1/params.mass * Cbn(3,3) * params.Kcol * col + 9.81 + 0.5*9.81;
-    xdot(11) = -1/params.tau * p + params.K*roll;
-    xdot(12) = -1/params.tau * q + params.K*pitch;
-    xdot(13) = -1/params.tau * r + params.K*yaw;
+    xdot(10) = 1/params.mass * Cbn(3,3) * params.Kcol * col*0.6 + 9.81;
+    xdot(11) = -1/params.tau * p + params.K*roll*0.6;
+    xdot(12) = -1/params.tau * q + params.K*pitch*0.6;
+    xdot(13) = -1/params.tau * r + params.K*yaw*0.6;
 
 end

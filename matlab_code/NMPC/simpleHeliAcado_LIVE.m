@@ -173,6 +173,8 @@ z_hat = zeros(6,length(t),2);
 z = z_hat;
 G = zeros(6,1); 
 
+sigm_temp = zeros(6,length(t),2); 
+
 % assign vectors
 x = nan(length(t), 13, 2);
 xdot = x;
@@ -214,12 +216,12 @@ for i = 1:2
     
         z(:,k,i) = [v_n v_e v_d p q r]'; %state vector 
     
-        T_mpc = [0;0;K_col*u_mpc(1,k,i)]./m;
+        T_mpc = K_col*u_mpc(1,k,i)/m;
         M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2,k,i);(-1/tau_q)*q+K_theta*u_mpc(3,k,i);(-1/tau_r)*r+K_psi*u_mpc(4,k,i)];
     
         f = [[0;0;9.81]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
         
-        g = [e_zb e_zb e_zb e_zb;zeros(3,1) eye(3)]; %uncertainty in matched component 
+        g = [e_zb zeros(3,3);zeros(3,1) eye(3)]; %uncertainty in matched component 
         g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
     
         PHI = inv(A_s)*(expm(A_s*dt) - eye(6)); 
@@ -230,8 +232,11 @@ for i = 1:2
         sigma_m = sigma(1:4); 
         sigma_um = sigma(5:6); 
     
+        temp = [sigma_um(1:2);sigma_m(1)]; 
+        sigm_temp(:,k,i) = [temp;sigma_m(2:4)]; 
+        
         u_L1(:,k+1,i) = u_L1(:,k,i)*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
-        z_hat(:,k+1,1) = z_hat(:,k,i) + (f + g*(u_L1(:,k+1,i) + sigma_m) + g_T*sigma_um + A_s*(z_hat(:,k,i) - z(:,k,i)))*dt; 
+        z_hat(:,k+1,i) = z_hat(:,k,i) + (f + g*(u_L1(:,k+1,i) + sigma_m) + g_T*sigma_um + A_s*(z_hat(:,k,i) - z(:,k,i)))*dt; 
     
         if i == 1
             u(k,:,i) = u_mpc(:,k,i);
@@ -369,10 +374,65 @@ subplot(4,1,4)
 plot(t, u(:,4,1), t, u(:,4,2));
 ylabel('yaw');
 xlabel('time (sec)');
-legend('MPC', 'L1+MPC', 'Reference');
+legend('MPC', 'L1+MPC');
 
+figure('name', 'sigma')
+subplot(3,2,1)
+plot(t,sigm_temp(1,:,2))
+ylabel('x')
+subplot(3,2,2)
+plot(t,sigm_temp(2,:,2))
+ylabel('y')
+subplot(3,2,3)
+plot(t,sigm_temp(3,:,2))
+ylabel('z')
+subplot(3,2,4)
+plot(t,sigm_temp(4,:,2))
+ylabel('\phi')
+subplot(3,2,5)
+plot(t,sigm_temp(5,:,2))
+ylabel('\theta')
+subplot(3,2,6)
+plot(t,sigm_temp(6,:,2))
+ylabel('\psi')
 
-
+figure('name', 'observer')
+subplot(3,2,1)
+hold on 
+plot(t,z(1,:,2))
+plot(t,z_hat(1,:,2))
+legend('actual','estimate')
+ylabel('N_{vel}')
+subplot(3,2,2)
+hold on 
+plot(t,z(2,:,2))
+plot(t,z_hat(2,:,2))
+legend('actual','estimate')
+ylabel('E_{vel}')
+subplot(3,2,3)
+hold on 
+plot(t,z(3,:,2))
+plot(t,z_hat(3,:,2))
+legend('actual','estimate')
+ylabel('D_{vel}')
+subplot(3,2,4)
+hold on 
+plot(t,z(4,:,2))
+plot(t,z_hat(4,:,2))
+legend('actual','estimate')
+ylabel('p')
+subplot(3,2,5)
+hold on 
+plot(t,z(5,:,2))
+plot(t,z_hat(5,:,2))
+legend('actual','estimate')
+ylabel('q')
+subplot(3,2,6)
+hold on 
+plot(t,z(6,:,2))
+plot(t,z_hat(6,:,2))
+legend('actual','estimate')
+ylabel('r')
 
 
 
