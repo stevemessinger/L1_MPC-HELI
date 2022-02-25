@@ -166,7 +166,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     acadodata_f1 << dot(q) == ((-2.00000000000000000000e+01)*q+3.49065850398865904936e+02*pitch);
     acadodata_f1 << dot(r) == ((-2.00000000000000000000e+01)*r+3.49065850398865904936e+02*yaw);
 
-    OCP ocp1(0, 1, 2);
+    OCP ocp1(0, 1, 5);
     ocp1.minimizeLSQ(acadodata_M1, acadodata_f2, acadodata_v2);
     ocp1.subjectTo(acadodata_f1);
     ocp1.subjectTo((-1.00000000000000000000e+00) <= col <= 1.00000000000000000000e+00);
@@ -175,11 +175,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     ocp1.subjectTo((-1.00000000000000000000e+00) <= yaw <= 1.00000000000000000000e+00);
 
 
-    RealTimeAlgorithm algo1(ocp1, 0.002);
+    RealTimeAlgorithm algo1(ocp1, 0.01);
     algo1.set( INTEGRATOR_TYPE, INT_RK45 );
     algo1.set( INTEGRATOR_TOLERANCE, 1.000000E-06 );
     algo1.set( ABSOLUTE_TOLERANCE, 1.000000E-04 );
-    algo1.set( MAX_NUM_ITERATIONS, 5 );
+    algo1.set( MAX_NUM_ITERATIONS, 3 );
     algo1.set( HESSIAN_APPROXIMATION, GAUSS_NEWTON );
 
     StaticReferenceTrajectory referencetrajectory(mexinput2);

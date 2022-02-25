@@ -1,6 +1,6 @@
 
 close all;
-clear all
+clearvars;
 clc
 
 BEGIN_ACADO;
@@ -44,7 +44,7 @@ BEGIN_ACADO;
     %% OCP
     startTime = 0;
     endTime = 1;
-    freq = 10;
+    freq = 5;
     
     ocp = acado.OCP(startTime, endTime, endTime*freq);
     
@@ -85,13 +85,13 @@ BEGIN_ACADO;
     ocp.subjectTo(-yawMax <= yaw <= yawMax);
 
     %% Optimization Algorithm
-    algo = acado.RealTimeAlgorithm(ocp, 0.002); % Set up the optimization algorithm
+    algo = acado.RealTimeAlgorithm(ocp, 0.01); % Set up the optimization algorithm
     
     algo.set('INTEGRATOR_TYPE', 'INT_RK45');
     algo.set( 'INTEGRATOR_TOLERANCE',   1e-6);    
     algo.set( 'ABSOLUTE_TOLERANCE',     1e-4 );
     
-    algo.set('MAX_NUM_ITERATIONS', 2);
+    algo.set('MAX_NUM_ITERATIONS', 3);
 
     algo.set( 'HESSIAN_APPROXIMATION', 'GAUSS_NEWTON' );  % Example setting hessian approximation
     %algo.set( 'HESSIAN_APPROXIMATION', 'CONSTANT_HESSIAN' );  % Other possible settings
@@ -113,6 +113,8 @@ END_ACADO;
 load('result.mat');
 load('Melon1.mat');
 load('lemniscate.mat');
+load('circle.mat');
+circle(:,1) = circle(:,1) - circle(1,1);
 data = lemniscate; % choose reference trajectory here
 
 trajectory = zeros(length(data(:,1)), 14);
@@ -137,9 +139,9 @@ endTime = floor(trajectory(end,1));
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
 f_dyn = 'heliDynamics';
-params.mass = 1;
+params.mass = 1; 
 params.tau = 0.05;
-params.Kcol = 5*params.mass/params.tau;
+params.Kcol = 5*params.mass*9.81;
 params.K = 1000/params.tau * pi/180;
 
 %************************************
@@ -153,6 +155,7 @@ A_s = -5*[1,0,0,0,0,0;
        0,0,0,1,0,0;
        0,0,0,0,1,0;
        0,0,0,0,0,1]; %adaption gains (Hurwitz)
+
 tau_c = 0.05; %first order z thrust response 
 tau_p = 0.05; %first order p response 
 tau_q = 0.05; %first order q response 
@@ -166,7 +169,8 @@ K_psi = (1000/tau_r)*(pi/180);
 %initialize 
 u_L1 = zeros(4,length(t),2); %initialize adaptive element input 
 u_mpc = u_L1; 
-z_hat = zeros(6,1); 
+z_hat = zeros(6,length(t),2); 
+z = z_hat;
 G = zeros(6,1); 
 
 % assign vectors
@@ -175,89 +179,95 @@ xdot = x;
 u = nan(length(t), 4,2);
 
 for i = 1:2
-x0 = trajectory(1,2:end);
-x(1,:,i) = x0;
-z_hat = [x0(8),x0(9),x0(10),x0(11),x0(12),x0(13)]'; 
+    x0 = trajectory(1,2:end);
+    x(1,:,i) = x0;
+    z_hat(:,1,i) = [x0(8),x0(9),x0(10),x0(11),x0(12),x0(13)]'; 
 
-k = 1;
-while t(k)<endTime-1*dt
-
+    k = 1;
+    count = 1;
     out = simpleHeliMPC_LIVE_RUN(x(k,:,i), t(k), trajectory);
-    
     u_mpc(:,k,i) = out.U';
+    while t(k)<endTime-1*dt
     
-    %************************************
-    %THIS GOES IN THE SIMULATION LOOP 
-    %************************************
-
-    %deconstruct state vector 
-    p_n = x(k,1,i); p_e = x(k,2,i); p_d = x(k,3,i);
-    q0 = x(k,4,i); q1 = x(k,5,i); q2 = x(k,6,i); q3 = x(k,7,i);
-    v_n = x(k,8,i); v_e = x(k,9,i); v_d = x(k,10,i);
-    p = x(k,11,i); q = x(k,12,i); r = x(k,13,i);
-    %L1-Adaptive Augmentation 
-    R_bi = [(q0^2 + q1^2 - q2^2 - q3^2), 2*(q1*q2+q0*q3), 2*(q1*q3-q0*q2);
-       2*(q1*q2-q0*q3), (q0^2 - q1^2 + q2^2 - q3^2), 2*(q2*q3+q0*q1);
-       2*(q1*q3+q0*q2), 2*(q2*q3-q0*q1), (q0^2 - q1^2 - q2^2 + q3^2)]';
-
-    e_xb = R_bi(:,1); 
-    e_yb = R_bi(:,2);
-    e_zb = R_bi(:,3);
-
-    z = [v_n v_e v_d p q r]'; %state vector 
-
-    T_mpc = [0;0;K_col*u_mpc(1,k,i)]./m;
-    M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2,k,i);(-1/tau_q)*q+K_theta*u_mpc(3,k,i);(-1/tau_r)*r+K_psi*u_mpc(4,k,i)];
-
-    f = [[0;0;9.81]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
+        if count == 5
+            out = simpleHeliMPC_LIVE_RUN(x(k,:,i), t(k), trajectory);
+            count = 1;
+        end
+        u_mpc(:,k,i) = out.U';
+        %************************************
+        %THIS GOES IN THE SIMULATION LOOP 
+        %************************************
     
-    g = [e_zb e_zb e_zb e_zb;zeros(3,1) eye(3)]; %uncertainty in matched component 
-    g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
-
-    PHI = inv(A_s)*((exp(A_s*dt)) - eye(6)); 
-    G = [g g_T]; 
-    mu = (exp(A_s*dt))*(z_hat - z); 
-
-    sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
-    sigma_m = sigma(1:4); 
-    sigma_um = sigma(5:6); 
-
-    u_L1(:,k+1,i) = u_L1(:,k,i)*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
-    z_hat = z_hat + (f + g*(u_L1(:,k+1,i) + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*dt; 
-
-    if i == 1
-        u(k,:,i) = u_mpc(:,k,i);
-    else 
-        u(k,:,i) = u_mpc(:,k,i) + u_L1(:,k+1,i)./[K_col;K_phi;K_theta;K_psi];
+        %deconstruct state vector 
+        p_n = x(k,1,i); p_e = x(k,2,i); p_d = x(k,3,i);
+        q0 = x(k,4,i); q1 = x(k,5,i); q2 = x(k,6,i); q3 = x(k,7,i);
+        v_n = x(k,8,i); v_e = x(k,9,i); v_d = x(k,10,i);
+        p = x(k,11,i); q = x(k,12,i); r = x(k,13,i);
+        %L1-Adaptive Augmentation 
+        R_bi = [(q0^2 + q1^2 - q2^2 - q3^2), 2*(q1*q2+q0*q3), 2*(q1*q3-q0*q2);
+                 2*(q1*q2-q0*q3), (q0^2 - q1^2 + q2^2 - q3^2), 2*(q2*q3+q0*q1);
+                 2*(q1*q3+q0*q2), 2*(q2*q3-q0*q1), (q0^2 - q1^2 - q2^2 + q3^2)]';
+    
+        e_xb = R_bi(:,1); 
+        e_yb = R_bi(:,2);
+        e_zb = R_bi(:,3);
+    
+        z(:,k,i) = [v_n v_e v_d p q r]'; %state vector 
+    
+        T_mpc = [0;0;K_col*u_mpc(1,k,i)]./m;
+        M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2,k,i);(-1/tau_q)*q+K_theta*u_mpc(3,k,i);(-1/tau_r)*r+K_psi*u_mpc(4,k,i)];
+    
+        f = [[0;0;9.81]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
+        
+        g = [e_zb e_zb e_zb e_zb;zeros(3,1) eye(3)]; %uncertainty in matched component 
+        g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
+    
+        PHI = inv(A_s)*(expm(A_s*dt) - eye(6)); 
+        G = [g g_T];
+        mu = expm(A_s*dt)*(z_hat(:,k,i) - z(:,k,i)); 
+    
+        sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
+        sigma_m = sigma(1:4); 
+        sigma_um = sigma(5:6); 
+    
+        u_L1(:,k+1,i) = u_L1(:,k,i)*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
+        z_hat(:,k+1,1) = z_hat(:,k,i) + (f + g*(u_L1(:,k+1,i) + sigma_m) + g_T*sigma_um + A_s*(z_hat(:,k,i) - z(:,k,i)))*dt; 
+    
+        if i == 1
+            u(k,:,i) = u_mpc(:,k,i);
+        else 
+            u(k,:,i) = u_mpc(:,k,i) + u_L1(:,k+1,i)./[K_col;K_phi;K_theta;K_psi];
+        end
+        
+        [x(k+1,:,i), xdot(k,:,i)] = RK4_zoh(f_dyn, x(k,:,i), u(k,:,i), t(k), params, dt);
+        
+        disp(t(k));
+        k = k + 1;
+        count = count + 1;
     end
-    
-    [x(k+1,:,i), xdot(k,:,i)] = RK4_zoh(f_dyn, x(k,:,i), u(k,:,i), t(k), params, dt);
-    
-    disp(t(k));
-    k = k + 1;
-end
-
 end
 %% plotting
 % close all;
-vis.time = t;
-vis.signals.values = x;
+vis.time = t(1:end-1);
+vis.signals.values = x(1:end-1,:,1);
 
 figure('name', 'position');
 subplot(3,1,1);
-plot(t, x(:,1), trajectory(:,1), trajectory(:,2));
+plot(t, x(:,1,1), t, x(:,1,2), trajectory(:,1), trajectory(:,2));
 ylabel('x pos (m)');
-legend('state', 'reference');
+legend('MPC', 'L1+MPC', 'Reference');
 
-subplot(3,1,2);
-plot(t, x(:,2), trajectory(:,1), trajectory(:,3));
+subplot(3,1,2); 
+plot(t, x(:,2,1), t, x(:,2,2),trajectory(:,1), trajectory(:,3));
 ylabel('y pos (m)');
-legend('state', 'reference');
+legend('MPC', 'L1+MPC', 'Reference');
 
 subplot(3,1,3);
-plot(t, x(:,3), trajectory(:,1), trajectory(:,4));
+plot(t, x(:,3,1), t, x(:,3,2),trajectory(:,1), trajectory(:,4));
+ylim([-5,5])
 ylabel('z pos (m)');
 xlabel('time (sec)');
+legend('MPC', 'L1+MPC', 'Reference');
 
 figure('name', '3d')
 hold on;
@@ -267,7 +277,6 @@ plot3(x(end,1), x(end,2), x(end,3), 'x');
 ylabel('E pos (m)');
 xlabel('N pos(m)');
 zlabel('D pos (m)');
-
 legend('trajectory', 'start', 'end');
 
 euler = quat2eul(x(:,4:7), 'XYZ');
@@ -288,35 +297,38 @@ xlabel('time (sec)');
 
 figure('name', 'quat')
 subplot(4,1,1)
-plot(t, x(:,4), trajectory(:,1), trajectory(:,5));
+hold on;
+plot(t, x(:,4,1), t, x(:,4,2), trajectory(:,1), trajectory(:,5));
 ylabel('qw')
 
 subplot(4,1,2)
-plot(t, x(:,5), trajectory(:,1), trajectory(:,6));
+plot(t, x(:,5,1), t, x(:,5,2), trajectory(:,1), trajectory(:,6));
 ylabel('qx')
 
 subplot(4,1,3)
-plot(t, x(:,6), trajectory(:,1), trajectory(:,7));
+plot(t, x(:,6,1), t, x(:,6,2),trajectory(:,1), trajectory(:,7));
 ylabel('qy')
 
 subplot(4,1,4)
-plot(t, x(:,7), trajectory(:,1), trajectory(:,8));
+plot(t, x(:,7,1), t, x(:,7,2),trajectory(:,1), trajectory(:,8));
 ylabel('qz')
 xlabel('time (sec)')
+legend('MPC', 'L1+MPC', 'Reference');
 
 
 figure('name', 'velocity')
 subplot(4,1,1)
-plot(t, x(:,8), trajectory(:,1), trajectory(:,9))
+plot(t, x(:,8,1), t, x(:,8,2),trajectory(:,1), trajectory(:,9))
 ylabel('x vel (m/s)')
 
 subplot(4,1,2)
-plot(t, x(:,9), trajectory(:,1),trajectory(:,10))
+plot(t, x(:,9,1), t, x(:,9,2),trajectory(:,1),trajectory(:,10))
 ylabel('y vel (m/s)');
 
 subplot(4,1,3)
-plot(t, x(:,10), trajectory(:,1), trajectory(:,11));
+plot(t, x(:,10,1), t, x(:,10,2),trajectory(:,1), trajectory(:,11));
 ylabel('z vel (m/s)');
+legend('MPC', 'L1+MPC', 'Reference');
 
 subplot(4,1,4)
 plot(t, sqrt(x(:,8).* x(:,8) + x(:,9).* x(:,9) + x(:,10).* x(:,10)));
@@ -326,36 +338,38 @@ xlabel('time (sec)');
 
 figure('name', 'rates')
 subplot(3,1,1);
-plot(t, x(:,11) * 180/pi, trajectory(:,1), trajectory(:,12)*180/pi);
+plot(t, x(:,11,1) * 180/pi, t, x(:,11,2) * 180/pi,trajectory(:,1), trajectory(:,12)*180/pi);
 ylabel('p (m)');
 
 subplot(3,1,2);
-plot(t, x(:,12) * 180/pi, trajectory(:,1), trajectory(:,13)*180/pi);
+plot(t, x(:,12,1) * 180/pi, t, x(:,12,2) * 180/pi,trajectory(:,1), trajectory(:,13)*180/pi);
 ylabel('q (m)');
 
 subplot(3,1,3);
-plot(t, x(:,13) * 180/pi, trajectory(:,1), trajectory(:,14)*180/pi);
+plot(t, x(:,13,1) * 180/pi, t, x(:,13,2) * 180/pi,trajectory(:,1), trajectory(:,14)*180/pi);
 ylabel('r (m)');
 xlabel('time (sec)');
+legend('MPC', 'L1+MPC', 'Reference');
 
 
 figure('name', 'inputs');
 subplot(4,1,1)
-plot(t, u(:,1));
+plot(t, u(:,1,1), t, u(:,1,2));
 ylabel('collective');
 
 subplot(4,1,2)
-plot(t, u(:,2));
+plot(t, u(:,2,1), t, u(:,2,2));
 ylabel('roll');
 
 subplot(4,1,3)
-plot(t, u(:,3));
+plot(t, u(:,3,1),t, u(:,3,1));
 ylabel('pitch');
 
 subplot(4,1,4)
-plot(t, u(:,4));
+plot(t, u(:,4,1), t, u(:,4,2));
 ylabel('yaw');
 xlabel('time (sec)');
+legend('MPC', 'L1+MPC', 'Reference');
 
 
 
