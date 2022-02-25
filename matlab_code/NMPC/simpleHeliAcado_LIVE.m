@@ -20,7 +20,7 @@ BEGIN_ACADO;
     tau = 0.05;
     K = 1000/tau * pi/180;
     mass = 1;
-    Kcol = 5*mass/tau;
+    Kcol = 5*mass * 9.81;
     
     Cbn = [(qw^2 + qx^2 - qy^2 - qz^2), 2*(qx*qy+qw*qz), 2*(qx*qz-qw*qy);
            2*(qx*qy-qw*qz), (qw^2 - qx^2 + qy^2 - qz^2), 2*(qy*qz+qw*qx);
@@ -33,17 +33,18 @@ BEGIN_ACADO;
     diffEQ.add(dot(qx) == 0.5 * (qw*p + qy*r - qz*q));
     diffEQ.add(dot(qy) == 0.5 * (qw*q - qx*r + qz*p));
     diffEQ.add(dot(qz) == 0.5 * (qw*r + qx*q - qy*p));
-    diffEQ.add(dot(xd) == 1/mass * Cbn(1,3) * (-1/tau + Kcol * col));
-    diffEQ.add(dot(yd) == 1/mass * Cbn(2,3) * (-1/tau + Kcol * col));
-    diffEQ.add(dot(zd) == 1/mass * Cbn(3,3) * (-1/tau + Kcol * col) + 9.81);
+    diffEQ.add(dot(xd) == 1/mass * Cbn(1,3) * Kcol * col);
+    diffEQ.add(dot(yd) == 1/mass * Cbn(2,3) * Kcol * col);
+    diffEQ.add(dot(zd) == 1/mass * Cbn(3,3) * Kcol * col + 9.81);
     diffEQ.add(dot(p) == -1/tau * p + K*roll);
     diffEQ.add(dot(q) == -1/tau * q + K*pitch);
     diffEQ.add(dot(r) == -1/tau * r + K*yaw);
+
     
     %% OCP
     startTime = 0;
     endTime = 1;
-    freq = 10;
+    freq = 2;
     
     ocp = acado.OCP(startTime, endTime, endTime*freq);
     
@@ -84,13 +85,13 @@ BEGIN_ACADO;
     ocp.subjectTo(-yawMax <= yaw <= yawMax);
 
     %% Optimization Algorithm
-    algo = acado.RealTimeAlgorithm(ocp, 0.0025); % Set up the optimization algorithm
+    algo = acado.RealTimeAlgorithm(ocp, 0.01); % Set up the optimization algorithm
     
     algo.set('INTEGRATOR_TYPE', 'INT_RK45');
     algo.set( 'INTEGRATOR_TOLERANCE',   1e-6);    
     algo.set( 'ABSOLUTE_TOLERANCE',     1e-4 );
     
-    algo.set('MAX_NUM_ITERATIONS', 2);
+    algo.set('MAX_NUM_ITERATIONS', 5);
 
     algo.set( 'HESSIAN_APPROXIMATION', 'GAUSS_NEWTON' );  % Example setting hessian approximation
     %algo.set( 'HESSIAN_APPROXIMATION', 'CONSTANT_HESSIAN' );  % Other possible settings
@@ -112,10 +113,11 @@ END_ACADO;
 load('result.mat');
 load('Melon1.mat');
 load('lemniscate.mat');
+load('circle.mat');
 data = Melon1; % choose reference trajectory here
 
 trajectory = zeros(length(data(:,1)), 14);
-trajectory(:,1) = data(:,1);
+trajectory(:,1) = data(:,1) - data(1,1);
 trajectory(:,2) = data(:,18);
 trajectory(:,3) = -data(:,19);
 trajectory(:,4) = -data(:,20);
@@ -131,21 +133,21 @@ trajectory(:,13) = -data(:,6);
 trajectory(:,14) = -data(:,7);
 
 
-dt=0.0025; % time step
+dt=0.002; % time step
 endTime = floor(trajectory(end,1));
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
 f_dyn = 'heliDynamics';
 params.mass = 1;
 params.tau = 0.05;
-params.Kcol = 5*params.mass/params.tau;
+params.Kcol = 5*params.mass * 9.81;
 params.K = 1000/params.tau * pi/180;
 
 %************************************
 %THIS GOES PRIOR TO SIMULATION 
 %************************************
 % adaptive element parameters
-w_co = 100; %cut off frequency
+w_co = 15; %cut off frequency
 A_s = -5*[1,0,0,0,0,0;
        0,1,0,0,0,0;
        0,0,1,0,0,0;
@@ -157,7 +159,7 @@ tau_p = 0.05; %first order p response
 tau_q = 0.05; %first order q response 
 tau_r = 0.05; %first order r response 
 m = 1; 
-K_col = (5*m)/tau_c; 
+K_col = (5*m)*g; 
 K_phi = (1000/tau_p)*(pi/180);
 K_theta = (1000/tau_q)*(pi/180);
 K_psi = (1000/tau_r)*(pi/180);
@@ -177,12 +179,17 @@ x(1,:) = x0;
 z_hat = [x0(8),x0(9),x0(10),x0(11),x0(12),x0(13)]'; 
 
 k = 1;
-while t(k)<endTime
+count = 1;
+out = simpleHeliMPC_LIVE_RUN(x(k,:), t(k), trajectory);
 
-    out = simpleHeliMPC_LIVE_RUN(x(k,:), t(k), trajectory);
+while t(k)<endTime
     
-    u_mpc = out.U';
-    
+    if count == 5
+        out = simpleHeliMPC_LIVE_RUN(x(k,:), t(k), trajectory);
+        u_mpc = out.U';
+        count = count + 1;
+    end
+
     %************************************
     %THIS GOES IN THE SIMULATION LOOP 
     %************************************
@@ -192,39 +199,39 @@ while t(k)<endTime
     q0 = x(k,4); q1 = x(k,5); q2 = x(k,6); q3 = x(k,7);
     v_n = x(k,8); v_e = x(k,9); v_d = x(k,10);
     p = x(k,11); q = x(k,12); r = x(k,13);
+
     %L1-Adaptive Augmentation 
     e_xb = [1-2*(q2^2+q3^2);2*(q1*q2+q0*q3);2*(q1*q3-q0*q2)]; 
     e_yb = [2*(q1*q2-q0*q3);1-2*(q1^2+q3^2);2*(q2*q3-q0*q1)]; 
     e_zb = [2*(q1*q3+q0*q2);2*(q2*q3-q0*q1);1-2*(q1^2+q2^2)]; 
 
-    R_bi = [e_xb, e_yb, e_zb]'; %DCM from body to inertial 
-
-%     e_xb = R_bi(1,:)'; 
-%     e_yb = R_bi(2,:)';
-%     e_zb = R_bi(3,:)';
+    %R_bi = [e_xb, e_yb, e_zb]'; %DCM from body to inertial 
+    R_bi = quat2dcm(x(k,4:7));
+    %e_xb = R_bi(1,:)'; 
+    %e_yb = R_bi(2,:)';
+    %e_zb = R_bi(3,:)';
 
     z = [v_n v_e v_d p q r]'; %state vector 
 
+    T_mpc = [0;0;K_col*u_mpc(1)]./m; % i think theses should be written like this
+    M_mpc = [K_phi*u_mpc(2);K_theta*u_mpc(3);K_psi*u_mpc(4)];
 
-    T_mpc = [0;0;(-1/tau_c)+K_col*u_mpc(1)]./m;
-    M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2);(-1/tau_q)*q+K_theta*u_mpc(3);(-1/tau_r)*r+K_psi*u_mpc(4)];
-
-    f = [[0;0;0]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
-    g = [e_zb e_zb e_zb e_zb;zeros(3,1) eye(3)]; %uncertainty in matched component 
+    f = [[0;0;9.81] + R_bi * T_mpc; M_mpc]; %desired dynamics 
+    g = [e_zb e_zb e_zb e_zb;zeros(3,1) eye(3)]; %uncertainty in matched component (i dont think this is correct)
     g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
 
-    PHI = inv(A_s)*((exp(A_s*dt)) - eye(6)); 
+    PHI = A_s\((exp(A_s*dt)) - eye(6)); 
     G = [g g_T]; 
     mu = (exp(A_s*dt))*(z_hat - z); 
 
-    sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
+    sigma = -eye(6)*G\PHI\mu; %piecewise-constant adaptation law 
     sigma_m = sigma(1:4); 
     sigma_um = sigma(5:6); 
 
     u_L1 = u_L1*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
     z_hat = z_hat + (f + g*(u_L1 + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*dt; 
 
-    u(k,:) = u_L1;
+    u(k,:) = u_mpc;
     
     [x(k+1,:),xdot(k,:)]= RK4_zoh(f_dyn, x(k,:), u(k,:), t, params, dt);
     
