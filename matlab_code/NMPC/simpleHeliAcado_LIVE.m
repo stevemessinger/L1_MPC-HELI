@@ -115,7 +115,7 @@ load('Melon1.mat');
 load('lemniscate.mat');
 load('circle.mat');
 circle(:,1) = circle(:,1) - circle(1,1);
-data = lemniscate; % choose reference trajectory here
+data = Melon1; % choose reference trajectory here
 
 trajectory = zeros(length(data(:,1)), 14);
 trajectory(:,1) = data(:,1);
