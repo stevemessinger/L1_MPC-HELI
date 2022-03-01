@@ -114,7 +114,8 @@ load('result.mat');
 load('Melon1.mat');
 load('lemniscate.mat');
 load('circle.mat');
-data = circle; % choose reference trajectory here
+circle(:,1) = circle(:,1) - circle(1,1);
+data = lemniscate; % choose reference trajectory here
 
 trajectory = zeros(length(data(:,1)), 14);
 trajectory(:,1) = data(:,1);
@@ -135,7 +136,6 @@ trajectory(:,14) = -data(:,7);
 
 dt=0.002; % time step
 endTime = floor(trajectory(end,1));
-endTime = 10;
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
 f_dyn = 'heliDynamics';
@@ -169,8 +169,11 @@ K_psi = (1000/tau_r)*(pi/180);
 %initialize 
 u_L1 = zeros(4,length(t),2); %initialize adaptive element input 
 u_mpc = u_L1; 
-z_hat = zeros(6,1); 
+z_hat = zeros(6,length(t),2); 
+z = z_hat;
 G = zeros(6,1); 
+
+sigm_temp = zeros(6,length(t),2); 
 
 % assign vectors
 x = nan(length(t), 13, 2);
@@ -180,8 +183,8 @@ u = nan(length(t), 4,2);
 for i = 1:2
     x0 = trajectory(1,2:end);
     x(1,:,i) = x0;
-    z_hat = [x0(8),x0(9),x0(10),x0(11),x0(12),x0(13)]'; 
-    
+    z_hat(:,1,i) = [x0(8),x0(9),x0(10),x0(11),x0(12),x0(13)]'; 
+
     k = 1;
     count = 1;
     out = simpleHeliMPC_LIVE_RUN(x(k,:,i), t(k), trajectory);
@@ -211,26 +214,29 @@ for i = 1:2
         e_yb = R_bi(:,2);
         e_zb = R_bi(:,3);
     
-        z = [v_n v_e v_d p q r]'; %state vector 
+        z(:,k,i) = [v_n v_e v_d p q r]'; %state vector 
     
-        T_mpc = [0;0;K_col*u_mpc(1,k,i)]./m;
+        T_mpc = K_col*u_mpc(1,k,i)/m;
         M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2,k,i);(-1/tau_q)*q+K_theta*u_mpc(3,k,i);(-1/tau_r)*r+K_psi*u_mpc(4,k,i)];
     
         f = [[0;0;9.81]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
         
-        g = [e_zb e_zb e_zb e_zb;zeros(3,1) eye(3)]; %uncertainty in matched component 
+        g = [e_zb zeros(3,3);zeros(3,1) eye(3)]; %uncertainty in matched component 
         g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
     
         PHI = inv(A_s)*(expm(A_s*dt) - eye(6)); 
         G = [g g_T];
-        mu = expm(A_s*dt)*(z_hat - z); 
+        mu = expm(A_s*dt)*(z_hat(:,k,i) - z(:,k,i)); 
     
         sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
         sigma_m = sigma(1:4); 
         sigma_um = sigma(5:6); 
     
+        temp = [sigma_um(1:2);sigma_m(1)]; 
+        sigm_temp(:,k,i) = [temp;sigma_m(2:4)]; 
+        
         u_L1(:,k+1,i) = u_L1(:,k,i)*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
-        z_hat = z_hat + (f + g*(u_L1(:,k+1,i) + sigma_m) + g_T*sigma_um + A_s*(z_hat - z))*dt; 
+        z_hat(:,k+1,i) = z_hat(:,k,i) + (f + g*(u_L1(:,k+1,i) + sigma_m) + g_T*sigma_um + A_s*(z_hat(:,k,i) - z(:,k,i)))*dt; 
     
         if i == 1
             u(k,:,i) = u_mpc(:,k,i);
@@ -247,25 +253,26 @@ for i = 1:2
 end
 %% plotting
 % close all;
-vis.time = t;
-vis.signals.values = x;
+vis.time = t(1:end-1);
+vis.signals.values = x(1:end-1,:,1);
 
 figure('name', 'position');
 subplot(3,1,1);
 plot(t, x(:,1,1), t, x(:,1,2), trajectory(:,1), trajectory(:,2));
 ylabel('x pos (m)');
-legend('state', 'reference');
+legend('MPC', 'L1+MPC', 'Reference');
 
 subplot(3,1,2); 
 plot(t, x(:,2,1), t, x(:,2,2),trajectory(:,1), trajectory(:,3));
 ylabel('y pos (m)');
-legend('state', 'reference');
+legend('MPC', 'L1+MPC', 'Reference');
 
 subplot(3,1,3);
 plot(t, x(:,3,1), t, x(:,3,2),trajectory(:,1), trajectory(:,4));
 ylim([-5,5])
 ylabel('z pos (m)');
 xlabel('time (sec)');
+legend('MPC', 'L1+MPC', 'Reference');
 
 figure('name', '3d')
 hold on;
@@ -311,6 +318,7 @@ subplot(4,1,4)
 plot(t, x(:,7,1), t, x(:,7,2),trajectory(:,1), trajectory(:,8));
 ylabel('qz')
 xlabel('time (sec)')
+legend('MPC', 'L1+MPC', 'Reference');
 
 
 figure('name', 'velocity')
@@ -325,6 +333,7 @@ ylabel('y vel (m/s)');
 subplot(4,1,3)
 plot(t, x(:,10,1), t, x(:,10,2),trajectory(:,1), trajectory(:,11));
 ylabel('z vel (m/s)');
+legend('MPC', 'L1+MPC', 'Reference');
 
 subplot(4,1,4)
 plot(t, sqrt(x(:,8).* x(:,8) + x(:,9).* x(:,9) + x(:,10).* x(:,10)));
@@ -345,6 +354,7 @@ subplot(3,1,3);
 plot(t, x(:,13,1) * 180/pi, t, x(:,13,2) * 180/pi,trajectory(:,1), trajectory(:,14)*180/pi);
 ylabel('r (m)');
 xlabel('time (sec)');
+legend('MPC', 'L1+MPC', 'Reference');
 
 
 figure('name', 'inputs');
@@ -364,9 +374,65 @@ subplot(4,1,4)
 plot(t, u(:,4,1), t, u(:,4,2));
 ylabel('yaw');
 xlabel('time (sec)');
+legend('MPC', 'L1+MPC', 'Reference');
 
+figure('name', 'sigma')
+subplot(3,2,1)
+plot(t,sigm_temp(1,:,2))
+ylabel('x')
+subplot(3,2,2)
+plot(t,sigm_temp(2,:,2))
+ylabel('y')
+subplot(3,2,3)
+plot(t,sigm_temp(3,:,2))
+ylabel('z')
+subplot(3,2,4)
+plot(t,sigm_temp(4,:,2))
+ylabel('\phi')
+subplot(3,2,5)
+plot(t,sigm_temp(5,:,2))
+ylabel('\theta')
+subplot(3,2,6)
+plot(t,sigm_temp(6,:,2))
+ylabel('\psi')
 
-
+figure('name', 'observer')
+subplot(3,2,1)
+hold on 
+plot(t,z(1,:,2))
+plot(t,z_hat(1,:,2))
+legend('actual','estimate')
+ylabel('N_{vel}')
+subplot(3,2,2)
+hold on 
+plot(t,z(2,:,2))
+plot(t,z_hat(2,:,2))
+legend('actual','estimate')
+ylabel('E_{vel}')
+subplot(3,2,3)
+hold on 
+plot(t,z(3,:,2))
+plot(t,z_hat(3,:,2))
+legend('actual','estimate')
+ylabel('D_{vel}')
+subplot(3,2,4)
+hold on 
+plot(t,z(4,:,2))
+plot(t,z_hat(4,:,2))
+legend('actual','estimate')
+ylabel('p')
+subplot(3,2,5)
+hold on 
+plot(t,z(5,:,2))
+plot(t,z_hat(5,:,2))
+legend('actual','estimate')
+ylabel('q')
+subplot(3,2,6)
+hold on 
+plot(t,z(6,:,2))
+plot(t,z_hat(6,:,2))
+legend('actual','estimate')
+ylabel('r')
 
 
 
