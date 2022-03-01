@@ -1,0 +1,36 @@
+Helictoper Flight Testing plan:
+Equipment:
+	2 helictoper
+	4 batteries
+	taranis controller
+	battery charger
+	esp data collector
+	esp batteries / charger
+	laptop
+	controller usb cable
+	Vicon markers
+	double sided tape
+
+Tests:
+	-Field testing
+		1. step response test in all axis
+			a. roll left/right (max rate)
+			b. pitch forward backward (max rate)
+			c. yaw left/reight (max rate)
+			d. full collective positive/negative
+		2. Same tests but 50% rate
+		3. Repeat 2-3 times
+
+	-Vicon Testing
+		1. simple hover 
+		2. circles / figure 8
+			a. low speed
+			b. high speed
+		3. inverted flight
+			a. circle / figure 8
+		4. power loop
+			a. inverted powerloop
+		5. split s
+		6. piro-flip
+		7. funnel
+		

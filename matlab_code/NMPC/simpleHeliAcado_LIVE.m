@@ -14,6 +14,7 @@ BEGIN_ACADO;
     %% setup the differential equation
     diffEQ = acado.DifferentialEquation();
     
+
     DifferentialState x y z qw qx qy qz xd yd zd p q r;
     
     Control col roll pitch yaw;
@@ -43,8 +44,8 @@ BEGIN_ACADO;
     
     %% OCP
     startTime = 0;
-    endTime = 1;
-    freq = 5;
+    endTime = 10;
+    freq = 10;
     
     ocp = acado.OCP(startTime, endTime, endTime*freq);
     
@@ -63,7 +64,7 @@ BEGIN_ACADO;
     Q(9,9) = 1/20;
     Q(10,10) = 1/20;
     Q(11,11) = 1;
-    Q(12,12) = 1;
+    Q(12,12) = 1;v
     Q(13,13) = 1;
     
     ref = zeros(1,13);
@@ -190,7 +191,9 @@ for i = 1:2
     while t(k)<endTime-1*dt
     
         if count == 5
+            tic;
             out = simpleHeliMPC_LIVE_RUN(x(k,:,i), t(k), trajectory);
+            toc;
             count = 1;
         end
         u_mpc(:,k,i) = out.U';
