@@ -19,6 +19,28 @@ clc
 
 load('mit_imu.mat') %load MIT imu data
 load('mit_vicon.mat') %load MIT imu data
+% load('result.mat');
+% load('Melon1.mat');
+% load('lemniscate.mat');
+% load('circle.mat');
+% circle(:,1) = circle(:,1) - circle(1,1);
+% data = Melon1; % choose reference trajectory here
+% 
+% trajectory = zeros(length(data(:,1)), 14);
+% trajectory(:,1) = data(:,1);
+% trajectory(:,2) = data(:,18);
+% trajectory(:,3) = -data(:,19);
+% trajectory(:,4) = -data(:,20);
+% trajectory(:,5) = data(:,11);
+% trajectory(:,6) = data(:,8);
+% trajectory(:,7) = -data(:,9);
+% trajectory(:,8) = -data(:,10);
+% trajectory(:,9) = data(:,15);
+% trajectory(:,10) = -data(:,16);
+% trajectory(:,11) = -data(:,17);
+% trajectory(:,12) = data(:,5);
+% trajectory(:,13) = -data(:,6);
+% trajectory(:,14) = -data(:,7);
 
 %% SETUP 
 
@@ -71,9 +93,9 @@ x_hat(1,:) = [vicon_data(1,2:4) 1  1.5 0 vicon_data(1,5:8) 0.00001 0.00001 0.000
 
 %EKF filter setup
 P(:,:,1) = eye(16); %initial covariance matrix
-Q = diag([   0.1^2      0.1^2      0.1^2      0.01^2      0.01^2      0.01^2   0.01^2 0.01^2 0.01^2 0.01^2   0.000^2     0.000^2     0.000^2    0.000^2    0.000^2     0.000^2]);
+Q = diag([   0.001^2      0.001^2      0.001^2      0.001^2      0.001^2      0.001^2   0.001^2 0.001^2 0.001^2 0.00001^2   0.000^2     0.000^2     0.000^2    0.000^2    0.000^2     0.000^2]);
           %pos_x  pos_y  pos_z  vel_x  vel_y  vel_z  q0    q1    q2    q3  %b_ax  b_ay  b_az  b_wx  b_wy  b_wz
-R = diag([  0.00001^2    0.00001^2    0.00001^2    0.00001^2     0.00001^2     0.00001^2    0.00001^2]); 
+R = diag([  0.00000001^2    0.00000001^2    0.00000001^2    0.0000001^2     0.0000001^2     0.0000001^2    0.0000001^2]); 
          %pos_x  pos_y  pos_z  q0    q1    q2    q3
          
 Q = eye(16); 
@@ -87,6 +109,7 @@ for k = 1:max(length(vicon_data),length(imu_data))-1
     % Vicon measurment occurs 
     if time(k) >= vicon_data(vicon_counter,1)
         vicon(k+1,:) = vicon_data(vicon_counter,2:8); 
+        vicon(k+1,:) = [vicon_data(vicon_counter,2),-vicon_data(vicon_counter,3:4),vicon_data(vicon_counter,5:6),-vicon_data(vicon_counter,7:8)];
         vicon_counter = vicon_counter + 1; 
     else 
         vicon(k+1,:) = vicon(k,:); 
@@ -147,12 +170,12 @@ for k = 1:max(length(vicon_data),length(imu_data))-1
                 0   0   0   0   0   0   -2*q3*(ay-b_y)+2*q2*(az-b_z)    2*q2*(ay-b_y)+2*q3*(az-b_z)   -4*q2*(ax-b_x)+2*q1*(ay-b_y)+2*q0*(az-b_z)   -4*q3*(ax-b_x)-2*q0*(ay-b_y)+2*q1*(az-b_z)  -1+2*(q2^2 + q3^2)   -2*(q1*q2 - q0*q3)   -2*(q1*q3 + q0*q2)    0    0    0;
                 0   0   0   0   0   0    2*q3*(ax-b_x)-2*q1*(az-b_z)    2*q2*(ax-b_x)-4*q1*(ay-b_y)-2*q0*(az-b_z)    2*q1*(ax-b_x)+2*q3*(az-b_z)    2*q0*(ax-b_x)-4*q3*(ay-b_y)+2*q2*(az-b_z)  -2*(q1*q2 + q0*q3)   -1+2*(q1^2 + q3^2)   -2*(q2*q3 - q0*q1)    0    0    0; 
                 0   0   0   0   0   0   -2*q2*(ax-b_x)-2*q1*(ay-b_y)    2*q3*(ax-b_x)-2*q0*(ay-b_y)-4*q1*(az-b_z)   -2*q0*(ax-b_x)+2*q3*(ay-b_y)-4*q2*(az-b_z)     2*q1*(ax-b_x)+2*q2*(ay-b_y) -2*(q1*q3 - q0*q2)   -2*(q2*q3 - q0*q1)   -1+2*(q1^2 + q2^2)    0    0    0; 
-                0   0   0   0                   0                   0                   0                                0.5*(-wx+b_wx)                              0.5*(-wy+b_wy)                                 0.5*(-wz+b_wz)                              0                       0                       0                 0.5*q1     0.5*q2     0.5*q3; 
-                0   0   0   0                   0                   0                 0.5*(wx-b_wx)                          0                                       0.5*(wz-b_wz)                                   0.5*(-wy+b_wy)                               0                       0                       0                -0.5*q0     0.5*q3    -0.5*q2; 
-                0   0   0   0                   0                   0                 0.5*(wy-b_wy)                      0.5*(-wz+b_wz)                                  0                                          0.5*(wx-b_wx)                               0                       0                       0                -0.5*q3    -0.5*q0     0.5*q1; 
-                0   0   0   0                   0                   0                 0.5*(wz-b_wz)                      0.5*(wy-b_wy)                               0.5*(-wx+b_wx)                                       0                                     0                       0                       0                 0.5*q2    -0.5*q1    -0.5*q0; 
-                0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0; 
-                0   0   0   0   0   0   0   0   0   0   0   0                       0                 0             0         0; 
+                0   0   0   0   0   0   0   0.5*(-wx+b_wx)    0.5*(-wy+b_wy)    0.5*(-wz+b_wz)   0   0   0   0.5*q1   0.5*q2   0.5*q3; 
+                0   0   0   0   0   0   0.5*(wx-b_wx)   0   0.5*(wz-b_wz)    0.5*(-wy+b_wy)      0   0   0  -0.5*q0   0.5*q3  -0.5*q2; 
+                0   0   0   0   0   0   0.5*(wy-b_wy)   0.5*(-wz+b_wz)   0   0.5*(wx-b_wx)       0   0   0  -0.5*q3  -0.5*q0   0.5*q1; 
+                0   0   0   0   0   0   0.5*(wz-b_wz)   0.5*(wy-b_wy)    0.5*(-wx+b_wx)     0    0   0   0   0.5*q2  -0.5*q1  -0.5*q0; 
+                0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0; 
+                0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0; 
                 0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0; 
                 0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0; 
                 0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0; 
