@@ -85,6 +85,8 @@ y = nan(max(length(vicon_data),length(imu_data)),7);
 imu = nan(max(length(vicon_data),length(imu_data)),6); % [ax ay az gx gy gz]
 vicon = nan(max(length(vicon_data),length(imu_data)),7); % [pos_x pos_y pos_z q0 q1 q2 q3]
 P = zeros(16,16,length(vicon_data)); %EKF covariance matrix 
+cr = nan(7,7,length(vicon_data));
+r = nan(max(length(vicon_data),length(imu_data)),7); 
 time = zeros(1,length(dt)+1);
 %assign initial conditions
 time(1) = vicon_data(1,1); 
@@ -93,13 +95,11 @@ x_hat(1,:) = [vicon_data(1,2:4) 1  1.5 0 vicon_data(1,5:8) 0.00001 0.00001 0.000
 
 %EKF filter setup
 P(:,:,1) = eye(16); %initial covariance matrix
-Q = diag([   0.001^2      0.001^2      0.001^2      0.001^2      0.001^2      0.001^2   0.001^2 0.001^2 0.001^2 0.00001^2   0.000^2     0.000^2     0.000^2    0.000^2    0.000^2     0.000^2]);
+Q = diag([   0.1^2      0.1^2      0.1^2   0.04^2  0.04^2  0.04^2   0.02^2 0.02^2 0.02^2 0.02^2   0.000^2     0.000^2     0.000^2    0.000^2    0.000^2     0.000^2]);
           %pos_x  pos_y  pos_z  vel_x  vel_y  vel_z  q0    q1    q2    q3  %b_ax  b_ay  b_az  b_wx  b_wy  b_wz
-R = diag([  0.00000001^2    0.00000001^2    0.00000001^2    0.0000001^2     0.0000001^2     0.0000001^2    0.0000001^2]); 
+R = diag([  0.0001^2    0.0001^2    0.0001^2    0.00001^2     0.00001^2     0.00001^2    0.00001^2]); 
          %pos_x  pos_y  pos_z  q0    q1    q2    q3
          
-Q = eye(16); 
-R = eye(7); 
 %initialize counters
 vicon_counter = 1; 
 imu_counter = 1; 
@@ -148,22 +148,6 @@ for k = 1:max(length(vicon_data),length(imu_data))-1
         wx = imu(k+1,4); wy = imu(k+1,5); wz = imu(k+1,6); 
         ax = imu(k+1,1); ay = imu(k+1,2); az = imu(k+1,3); 
         % calculate A matrix 
-%         A = [   0   0   0   1-2*(q2^2 + q3^2)   2*(q1*q2 - q0*q3)   2*(q1*q3 + q0*q2)  -2*q3*vy+2*q2*vz                  2*q2*vy+2*q3*vz                            -4*q2*vx+2*q1*vy+2*q0*vz                        -4*q3*vx-2*q0*vy+2*q1*vz                    0                       0                       0                 0             0         0; 
-%                 0   0   0   2*(q1*q2 + q0*q3)   1-2*(q1^2 + q3^2)   2*(q2*q3 - q0*q1)   2*q3*vx-2*q1*vz                  2*q2*vx-4*q1*vy-2*q0*vz                     2*q1*vx+2*q3*vz                                2*q0*vx-4*q3*vy+2*q2*vz                     0                       0                       0                 0             0         0; 
-%                 0   0   0   2*(q1*q3 - q0*q2)   2*(q2*q3 - q0*q1)   1-2*(q1^2 + q2^2)  -2*q2*vx-2*q1*vy                  2*q3*vx-2*q0*vy-4*q1*vz                    -2*q0*vx+2*q3*vy-4*q2*vz                        2*q1*vx+2*q2*vy                             0                       0                       0                 0             0         0; 
-%                 0   0   0   0                   0                   0                  -2*q3*(ay-b_y)+2*q2*(az-b_z)       2*q2*(ay-b_y)+2*q3*(az-b_z)                -4*q2*(ax-b_x)+2*q1*(ay-b_y)+2*q0*(az-b_z)     -4*q3*(ax-b_x)-2*q0*(ay-b_y)+2*q1*(az-b_z)  -1+2*(q2^2 + q3^2)   -2*(q1*q2 - q0*q3)      -2*(q1*q3 + q0*q2)    0             0         0;
-%                 0   0   0   0                   0                   0                   2*q3*(ax-b_x)-2*q1*(az-b_z)      2*q2*(ax-b_x)-4*q1*(ay-b_y)-2*q0*(az-b_z)    2*q1*(ax-b_x)+2*q3*(az-b_z)                   2*q0*(ax-b_x)-4*q3*(ay-b_y)+2*q2*(az-b_z)  -2*(q1*q2 + q0*q3)   -1+2*(q1^2 + q3^2)      -2*(q2*q3 - q0*q1)    0             0         0; 
-%                 0   0   0   0                   0                   0                  -2*q2*(ax-b_x)-2*q1*(ay-b_y)      2*q3*(ax-b_x)-2*q0*(ay-b_y)-4*q1*(az-b_z)   -2*q0*(ax-b_x)+2*q3*(ay-b_y)-4*q2*(az-b_z)     2*q1*(ax-b_x)+2*q2*(ay-b_y)                -2*(q1*q3 - q0*q2)   -2*(q2*q3 - q0*q1)      -1+2*(q1^2 + q2^2)    0             0         0; 
-%                 0   0   0   0                   0                   0                   0                                0.5*(-wx+b_wx)                              0.5*(-wy+b_wy)                                 0.5*(-wz+b_wz)                              0                       0                       0                 0.5*q1     0.5*q2     0.5*q3; 
-%                 0   0   0   0                   0                   0                 0.5*(wx-b_wx)                          0                                       0.5*(wz-b_wz)                                   0.5*(-wy+b_wy)                               0                       0                       0                -0.5*q0     0.5*q3    -0.5*q2; 
-%                 0   0   0   0                   0                   0                 0.5*(wy-b_wy)                      0.5*(-wz+b_wz)                                  0                                          0.5*(wx-b_wx)                               0                       0                       0                -0.5*q3    -0.5*q0     0.5*q1; 
-%                 0   0   0   0                   0                   0                 0.5*(wz-b_wz)                      0.5*(wy-b_wy)                               0.5*(-wx+b_wx)                                       0                                     0                       0                       0                 0.5*q2    -0.5*q1    -0.5*q0; 
-%                 0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0; 
-%                 0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0; 
-%                 0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0; 
-%                 0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0; 
-%                 0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0; 
-%                 0   0   0   0                   0                   0                   0                                    0                                           0                                                0                                     0                       0                       0                 0             0         0]; 
         A = [   0   0   0   1   0   0   0   0   0   0   0   0   0   0   0   0; 
                 0   0   0   0   1   0   0   0   0   0   0   0   0   0   0   0; 
                 0   0   0   0   0   1   0   0   0   0   0   0   0   0   0   0; 
@@ -182,10 +166,10 @@ for k = 1:max(length(vicon_data),length(imu_data))-1
                 0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0]; 
  
         % integrate covariance matrix P using RK4
-        Pdot1 = A'*P(:,:,k) + P(:,:,k)*A  + Q;
-        Pdot2 = A'*(P(:,:,k) + Pdot1 * (1/ekf_freq) / 2) + (P(:,:,k) + Pdot1 * (1/ekf_freq) / 2)*A  + Q;
-        Pdot3 = A'*(P(:,:,k) + Pdot2 * (1/ekf_freq) / 2) + (P(:,:,k) + Pdot2 * (1/ekf_freq) / 2)*A  + Q;
-        Pdot4 = A'*(P(:,:,k) + Pdot3 * (1/ekf_freq)) + (P(:,:,k) + Pdot3 * (1/ekf_freq))*A  + Q;
+        Pdot1 = A*P(:,:,k) + P(:,:,k)*A'  + Q;
+        Pdot2 = A*(P(:,:,k) + Pdot1 * (1/ekf_freq) / 2) + (P(:,:,k) + Pdot1 * (1/ekf_freq) / 2)*A'  + Q;
+        Pdot3 = A*(P(:,:,k) + Pdot2 * (1/ekf_freq) / 2) + (P(:,:,k) + Pdot2 * (1/ekf_freq) / 2)*A'  + Q;
+        Pdot4 = A*(P(:,:,k) + Pdot3 * (1/ekf_freq)) + (P(:,:,k) + Pdot3 * (1/ekf_freq))*A'  + Q;
         totalPdot = (Pdot1 + 2 * Pdot2 + 2 * Pdot3 + Pdot4) / 6;
         P(:,:,k+1) = P(:, :, k) + totalPdot * (1/ekf_freq);
         % EKF measurment model 
@@ -195,15 +179,20 @@ for k = 1:max(length(vicon_data),length(imu_data))-1
              zeros(4,6) eye(4) zeros(4,6)]; 
         %make sensor estimate of measurement using x_hat 
         h_hat = C*x_hat(k+1,:)'; 
+        cr(:,:,k+1) = C*P(:,:,k+1)*C' + R;
+        r(k+1,:) = (y(k+1,:)' - h_hat)'; 
         % update hybrid EKF
-        K = P(:,:,k+1)*C'/(C*P(:,:,k+1)*C' + R); 
+        K = P(:,:,k+1)*C'*inv(C*P(:,:,k+1)*C' + R); 
         x_hat(k+1,:) = x_hat(k+1,:)' + K*(y(k+1,:)' - h_hat);
-        P(:,:,k+1) = (eye(16)-K*C)*P(:,:,k+1); 
+        P(:,:,k+1) = (eye(16)-K*C)*P(:,:,k+1);
+        
         ekf_counter = ekf_counter + 1; 
     else 
         % no EKF update
         x_hat(k+1,:) = x_hat(k,:);  
         P(:,:,k+1) = P(:,:,k); 
+        cr(:,:,k+1) = cr(:,:,k);
+        r(k+1,:) = r(k,:); 
     end
 
     time(k+1) = time(k) + dt(k); % update time 
@@ -217,59 +206,122 @@ plot(time, vicon(:,1), time, x_hat(:,1))
 ylabel('$N_{pos}$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
+grid
 subplot(3,2,3)
 plot(time, vicon(:,2), time, x_hat(:,2))
 ylabel('$E_{pos}$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
+grid
 subplot(3,2,5)
 plot(time, vicon(:,3), time, x_hat(:,3))
 ylabel('$D_{pos}$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
+grid
 subplot(3,2,2)
-plot(time, x_hat(:,4))
+plot(time, x_hat(:,4)); 
 ylabel('$N_{vel}$','interpreter','latex')
 xlabel('time (s)')
 legend('$\hat{x}$','interpreter','latex')
+grid
 subplot(3,2,4)
-plot(time, x_hat(:,5))
+plot(time, x_hat(:,5)); 
 ylabel('$E_{vel}$','interpreter','latex')
 xlabel('time (s)')
 legend('$\hat{x}$','interpreter','latex')
+grid
 subplot(3,2,6)
-plot(time, x_hat(:,6))
+plot(time, x_hat(:,6)); 
 ylabel('$D_{vel}$','interpreter','latex')
 xlabel('time (s)')
 legend('$\hat{x}$','interpreter','latex')
+grid 
 
 figure(2) 
 subplot(4,1,1)
-plot(time, vicon(:,4), time, x_hat(:,7))
+plot(time, vicon(:,4), time, x_hat(:,7)); 
 ylabel('$q_0$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
+grid
 subplot(4,1,2)
 plot(time, vicon(:,5), time, x_hat(:,8))
 ylabel('$q_1$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
+grid
 subplot(4,1,3)
-plot(time, vicon(:,6), time, x_hat(:,9))
+plot(time, vicon(:,6),time, x_hat(:,9)); 
 ylabel('$q_2$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
+grid
 subplot(4,1,4)
-plot(time, vicon(:,7), time, x_hat(:,10))
+plot(time, vicon(:,7), time, x_hat(:,10)); 
 ylabel('$q_3$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
+grid
 
 figure(3) 
 plot(time, x_hat(:,11:16))
 legend('b_{a_x}','b_{a_y}','b_{a_z}','b_{w_x}','b_{w_y}','b_{w_z}')
 xlabel('time (s)')
+grid
 
+figure(4) 
+subplot(3,1,1)
+plot(time,r(:,1),'k',time,2*sqrt(squeeze(cr(1,1,:))),'k--',time,-2*sqrt(squeeze(cr(1,1,:))),'k--');
+xlabel('time (s)');
+ylabel('residual $N_{pos}$', 'interpreter','latex');
+legend('residual','+/-2sqrt(HPHt+R)');
+ylim([-0.05,0.05])
+grid
+subplot(3,1,2)
+plot(time,r(:,2),'k',time,2*sqrt(squeeze(cr(2,2,:))),'k--',time,-2*sqrt(squeeze(cr(2,2,:))),'k--');
+xlabel('time (s)');
+ylabel('residual $E_{pos}$', 'interpreter','latex');
+legend('residual','+/-2sqrt(HPHt+R)');
+ylim([-0.05,0.05])
+grid
+subplot(3,1,3)
+plot(time,r(:,3),'k',time,2*sqrt(squeeze(cr(3,3,:))),'k--',time,-2*sqrt(squeeze(cr(3,3,:))),'k--');
+xlabel('time (s)');
+ylabel('residual $D_{pos}$', 'interpreter','latex');
+legend('residual','+/-2sqrt(HPHt+R)');
+ylim([-0.05,0.05])
+grid
+
+figure(5)
+subplot(2,2,1)
+plot(time,r(:,4),'k',time,2*sqrt(squeeze(cr(4,4,:))),'k--',time,-2*sqrt(squeeze(cr(4,4,:))),'k--');
+xlabel('time (s)');
+ylabel('residual $q_0$', 'interpreter','latex');
+legend('residual','+/-2sqrt(HPHt+R)');
+ylim([-0.02,0.02])
+grid
+subplot(2,2,2)
+plot(time,r(:,5),'k',time,2*sqrt(squeeze(cr(5,5,:))),'k--',time,-2*sqrt(squeeze(cr(5,5,:))),'k--');
+xlabel('time (s)');
+ylabel('residual $q_1$', 'interpreter','latex');
+legend('residual','+/-2sqrt(HPHt+R)');
+ylim([-0.02,0.02])
+grid
+subplot(2,2,3)
+plot(time,r(:,6),'k',time,2*sqrt(squeeze(cr(6,6,:))),'k--',time,-2*sqrt(squeeze(cr(6,6,:))),'k--');
+xlabel('time (s)');
+ylabel('residual $q_2$', 'interpreter','latex');
+legend('residual','+/-2sqrt(HPHt+R)');
+ylim([-0.02,0.02])
+grid
+subplot(2,2,4)
+plot(time,r(:,7),'k',time,2*sqrt(squeeze(cr(7,7,:))),'k--',time,-2*sqrt(squeeze(cr(7,7,:))),'k--');
+xlabel('time (s)');
+ylabel('residual $q_3$', 'interpreter','latex');
+legend('residual','+/-2sqrt(HPHt+R)');
+ylim([-0.02,0.02])
+grid
 
 
 

@@ -20,7 +20,7 @@ load('mit_vicon.mat') %load MIT imu data
 
 %% SETUP
 
-run_case = 'mit'; %change runcase to 'test', 'mit', 'data_#"
+run_case = 'test'; %change runcase to 'test', 'mit', 'data_#"
 freq_analysis = 1; % perform fft of data (1) or not (0)
 plot_filtered_data = 1; % plot filtered versus actual data (1) or not (0)
 
