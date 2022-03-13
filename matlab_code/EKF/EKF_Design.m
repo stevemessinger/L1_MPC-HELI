@@ -3,6 +3,13 @@ Extended Kalman Filter design using Vicon motion capture and IMU data
 
 Steve Messinger 
 Sources: Optimal State Estimation -Dan Simon 
+
+Important Note: 
+    1. This assumes measurment model and process model are running at the
+    same frequency (this can be changed fairly easily) 
+    2. THE IMU DATA OFF THE BNO55 IS IN DEG/S!!! (this is accounted for in
+    'derivative.m')
+
 %}
 
 clear all 
@@ -19,52 +26,37 @@ clc
 
 load('mit_imu.mat') %load MIT imu data
 load('mit_vicon.mat') %load MIT imu data
-% load('result.mat');
-% load('Melon1.mat');
-% load('lemniscate.mat');
-% load('circle.mat');
-% circle(:,1) = circle(:,1) - circle(1,1);
-% data = Melon1; % choose reference trajectory here
-% 
-% trajectory = zeros(length(data(:,1)), 14);
-% trajectory(:,1) = data(:,1);
-% trajectory(:,2) = data(:,18);
-% trajectory(:,3) = -data(:,19);
-% trajectory(:,4) = -data(:,20);
-% trajectory(:,5) = data(:,11);
-% trajectory(:,6) = data(:,8);
-% trajectory(:,7) = -data(:,9);
-% trajectory(:,8) = -data(:,10);
-% trajectory(:,9) = data(:,15);
-% trajectory(:,10) = -data(:,16);
-% trajectory(:,11) = -data(:,17);
-% trajectory(:,12) = data(:,5);
-% trajectory(:,13) = -data(:,6);
-% trajectory(:,14) = -data(:,7);
+load('circle.mat') %load our circle vicon and IMU data set
 
 %% SETUP 
 
 % choose which data to use 
-run_case = 'mit'; % 'mit' runs mit blackbird test data
-num_steps = 1000; % number of simulation steps to run 
+run_case = 'circle'; % 'mit' runs mit blackbird test data, 'circle' runs our custom data
 
 %assign data 
 switch run_case
     case 'mit'
-        vicon_data = [mitviconquad(1:num_steps,1)*(1e-9) mitviconquad(1:num_steps,5:11)]; % [time xyz_pos q1 q2 q3 q0]
-        imu_data = [mitimuquad1(1:num_steps,1)*(1e-9) mitimuquad1(1:num_steps,5:7) mitimuquad1(1:num_steps,2:4)]; % [time xyz_accel pqr]
+        vicon_data = [mitviconquad(:,1)*(1e-9) mitviconquad(:,5:11)]; % [time xyz_pos q1 q2 q3 q0]
+        imu_data = [mitimuquad1(:,1)*(1e-9) mitimuquad1(:,5:7) mitimuquad1(:,2:4)]; % [time xyz_accel pqr]
+    case 'circle'
+        vicon_data = circlevicon; % [time xyz_pos q1 q2 q3 q0]
+        imu_data = circleIMU; % [time xyz_accel pqr]
+        imu_data(:,1) = imu_data(:,1).*(1e-9); 
+        vicon_data(:,1) = vicon_data(:,1).*(1e-9);
 end
+
+% vicon_data = [vicon_data(:,1:4) filloutliers(vicon_data(:,5:8),'clip','movmedian',20)];
 
 %EKF filter operating specifications
 ekf_freq = 100; 
 
 % hardware specifications 
-imu_freq = 1/(mean(imu_data(2:end,1) - imu_data(1:end-1,1)));  %100; % update frequency of imu (Hz)
-vicon_freq = 1/(mean(vicon_data(2:end,1) - vicon_data(1:end-1,1))); %180; % update frequency of vicon pose data (Hz)
+imu_freq = 1/(mean(imu_data(2:end,1) - imu_data(1:end-1,1))); % update frequency of imu (Hz)
+vicon_freq = 1/(mean(vicon_data(2:end,1) - vicon_data(1:end-1,1))); % update frequency of vicon pose data (Hz)
 
-% NEED TO GIT RID OF THIS
-vicon_data(1:num_steps,1) = vicon_data(:,1) - vicon_data(1,1); %initialize time to zero 
-imu_data(1:num_steps,1) = imu_data(:,1) - imu_data(1,1); 
+% initialize time to zero
+vicon_data(:,1) = vicon_data(:,1) - vicon_data(1,1);  
+imu_data(:,1) = imu_data(:,1) - imu_data(1,1); 
 
 % setup simulation
 ekf_time = vicon_data(1,1):1/ekf_freq:length(vicon_data)*(1/ekf_freq);
@@ -87,17 +79,17 @@ vicon = nan(max(length(vicon_data),length(imu_data)),7); % [pos_x pos_y pos_z q0
 P = zeros(16,16,length(vicon_data)); %EKF covariance matrix 
 cr = nan(7,7,length(vicon_data));
 r = nan(max(length(vicon_data),length(imu_data)),7); 
-time = zeros(1,length(dt)+1);
+time = zeros(1,max(length(vicon_data),length(imu_data)));
 %assign initial conditions
 time(1) = vicon_data(1,1); 
 vicon(1,:) = vicon_data(1,2:8);
-x_hat(1,:) = [vicon_data(1,2:4) 1  1.5 0 vicon_data(1,5:8) 0.00001 0.00001 0.00001 0.00001 0.00001 0.00001 ]; 
+x_hat(1,:) = [vicon_data(1,2:4) 1  -1.5 0 vicon_data(1,8) vicon_data(1,5:7) 0.00001 0.00001 0.00001 0.00001 0.00001 0.00001 ]; 
 
 %EKF filter setup
 P(:,:,1) = eye(16); %initial covariance matrix
-Q = diag([   0.1^2      0.1^2      0.1^2   0.04^2  0.04^2  0.04^2   0.02^2 0.02^2 0.02^2 0.02^2   0.000^2     0.000^2     0.000^2    0.000^2    0.000^2     0.000^2]);
+Q = diag([   0.2^2      0.2^2      0.2^2   0.04^2  0.04^2  0.04^2   0.06^2 0.06^2 0.06^2 0.06^2   0.000^2     0.000^2     0.000^2    0.000^2    0.000^2     0.000^2]);
           %pos_x  pos_y  pos_z  vel_x  vel_y  vel_z  q0    q1    q2    q3  %b_ax  b_ay  b_az  b_wx  b_wy  b_wz
-R = diag([  0.0001^2    0.0001^2    0.0001^2    0.00001^2     0.00001^2     0.00001^2    0.00001^2]); 
+R = diag([  0.0001^2    0.0001^2    0.0001^2    0.01^2     0.01^2     0.01^2    0.01^2]); 
          %pos_x  pos_y  pos_z  q0    q1    q2    q3
          
 %initialize counters
@@ -130,7 +122,7 @@ for k = 1:max(length(vicon_data),length(imu_data))-1
     %step" occurs each time the EKF is called
     if time(k) >= ekf_time(ekf_counter)
         %EKF measurment model
-        y(k+1,:) = vicon(k+1,:);
+        y(k+1,:) = [vicon(k+1,1:3) vicon(k+1,7) vicon(k+1,4:6)]; % switch quaterion from VICON in measurment
         % EKF Process Model 
         % integrate EKF equations using RK4
         xdot1 = derivative(x_hat(k,:), imu(k+1,:), time(k));
@@ -240,25 +232,25 @@ grid
 
 figure(2) 
 subplot(4,1,1)
-plot(time, vicon(:,4), time, x_hat(:,7)); 
+plot(time, vicon(:,7), time, x_hat(:,7)); 
 ylabel('$q_0$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
 grid
 subplot(4,1,2)
-plot(time, vicon(:,5), time, x_hat(:,8))
+plot(time, vicon(:,4), time, x_hat(:,8))
 ylabel('$q_1$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
 grid
 subplot(4,1,3)
-plot(time, vicon(:,6),time, x_hat(:,9)); 
+plot(time, vicon(:,5),time, x_hat(:,9)); 
 ylabel('$q_2$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
 grid
 subplot(4,1,4)
-plot(time, vicon(:,7), time, x_hat(:,10)); 
+plot(time, vicon(:,6), time, x_hat(:,10)); 
 ylabel('$q_3$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
@@ -299,28 +291,28 @@ plot(time,r(:,4),'k',time,2*sqrt(squeeze(cr(4,4,:))),'k--',time,-2*sqrt(squeeze(
 xlabel('time (s)');
 ylabel('residual $q_0$', 'interpreter','latex');
 legend('residual','+/-2sqrt(HPHt+R)');
-ylim([-0.02,0.02])
+ylim([-0.1,0.1])
 grid
 subplot(2,2,2)
 plot(time,r(:,5),'k',time,2*sqrt(squeeze(cr(5,5,:))),'k--',time,-2*sqrt(squeeze(cr(5,5,:))),'k--');
 xlabel('time (s)');
 ylabel('residual $q_1$', 'interpreter','latex');
 legend('residual','+/-2sqrt(HPHt+R)');
-ylim([-0.02,0.02])
+ylim([-0.1,0.1])
 grid
 subplot(2,2,3)
 plot(time,r(:,6),'k',time,2*sqrt(squeeze(cr(6,6,:))),'k--',time,-2*sqrt(squeeze(cr(6,6,:))),'k--');
 xlabel('time (s)');
 ylabel('residual $q_2$', 'interpreter','latex');
 legend('residual','+/-2sqrt(HPHt+R)');
-ylim([-0.02,0.02])
+ylim([-0.1,0.1])
 grid
 subplot(2,2,4)
 plot(time,r(:,7),'k',time,2*sqrt(squeeze(cr(7,7,:))),'k--',time,-2*sqrt(squeeze(cr(7,7,:))),'k--');
 xlabel('time (s)');
 ylabel('residual $q_3$', 'interpreter','latex');
 legend('residual','+/-2sqrt(HPHt+R)');
-ylim([-0.02,0.02])
+ylim([-0.1,0.1])
 grid
 
 
