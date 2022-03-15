@@ -1,0 +1,8 @@
+{
+    "C_Cpp.errorSquiggles": "Enabled",
+    "files.associations": {
+        "hash_map": "cpp",
+        "hash_set": "cpp",
+        "iostream": "cpp"
+    }
+}

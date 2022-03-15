@@ -12,7 +12,7 @@ def publishBNOData():
     connected = False
     while not connected:
         try:
-            serverIP = "192.168.0.164"
+            serverIP = "192.168.4.1"
             ws = websocket.create_connection("ws://" + serverIP)
             connected = True
         except Exception as e:
@@ -21,6 +21,7 @@ def publishBNOData():
     print("Connected!")
 
     while not rospy.is_shutdown():
+        ws.send('r')
         message = ws.recv()
         data = message.split(':')
 
