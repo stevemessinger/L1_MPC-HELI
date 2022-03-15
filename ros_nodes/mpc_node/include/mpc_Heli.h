@@ -14,6 +14,7 @@
 #include "ros/console.h"
 #include "mpc_node/Pose.h"
 #include "mpc_node/Inputs.h"
+#include "mpc_node/Trajectory.h"
 
 /* Some convenient definitions. */
 #define NX          ACADO_NX  /* Number of differential state variables.  */
@@ -39,21 +40,20 @@ public:
 
     bool loop();
 
-    void setVerbose(bool);
-
 private:
 
     void poseCallback(const mpc_node::Pose::ConstPtr& poseMessage);
 
+    void trajectoryCallback(const mpc_node::Trajectory::ConstPtr& trajectoryMessage);
+
     ros::NodeHandle nh;
     ros::Subscriber poseSubscriber;
+    ros::Subscriber trajSubscriber;
     ros::Publisher inputPublisher;
 
     ACADOvariables acadoVariables;
     ACADOworkspace acadoWorkspace;
-    int status;
 
-    mpc_node::Pose currentPose;
     mpc_node::Inputs inputs;
 
     bool verbose;

@@ -1,5 +1,5 @@
 #include "../include/mpc_Heli.h"
-
+#define ever ;; //lol
 
 int main(int argc, char** argv){
     ros::init(argc, argv, "mpc_node");
@@ -10,7 +10,7 @@ int main(int argc, char** argv){
 
     controller.init(); // init the solver
     
-    for(;;){
+    for(ever){
 
         controller.loop(); //call the solver
 

@@ -1,0 +1,13 @@
+float32[50] x
+float32[50] y
+float32[50] z
+float32[50] qw
+float32[50] qx
+float32[50] qy
+float32[50] qz
+float32[50] vx
+float32[50] vy
+float32[50] vz
+float32[50] angx
+float32[50] angy
+float32[50] angz

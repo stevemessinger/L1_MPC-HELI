@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(mpc_node)
+project(trajectory_generator)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -8,10 +8,9 @@ project(mpc_node)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  message_generation
   roscpp
   rospy
-  std_msgs
+  stdmsgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -47,13 +46,12 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
-# Generate messages in the 'msg' folder
-add_message_files(
- FILES
-  Pose.msg
-  Inputs.msg
-  Trajectory.msg
-)
+## Generate messages in the 'msg' folder
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -69,11 +67,11 @@ add_message_files(
 #   Action2.action
 # )
 
-# Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-)
+## Generate added messages and services with any dependencies listed here
+# generate_messages(
+#   DEPENDENCIES
+#   std_msgs  # Or other packages containing msgs
+# )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -105,11 +103,10 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS include
-  LIBRARIES mpc_node
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+#  INCLUDE_DIRS include
+#  LIBRARIES trajectory_generator
+#  CATKIN_DEPENDS roscpp rospy stdmsgs
 #  DEPENDS system_lib
-  CATKIN_DEPENDS message_generation message_runtime roscpp rospy std_msgs
 )
 
 ###########
@@ -119,17 +116,13 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include
+# include
   ${catkin_INCLUDE_DIRS}
-  include/heli_MPC_EXPORT/
-  include/heli_MPC_EXPORT/qpoases/
-  include/heli_MPC_EXPORT/qpoases/INCLUDE
-  include/heli_MPC_EXPORT/qpoases/SRC
 )
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/mpc_node.cpp
+#   src/${PROJECT_NAME}/trajectory_generator.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -140,7 +133,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/mpc_node_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/trajectory_generator_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -204,35 +197,10 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_mpc_node.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_trajectory_generator.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
-
-add_executable(mpc_node
-  src/mpc_node.cpp
-  src/mpc_Heli.cpp
-  include/heli_MPC_EXPORT/acado_auxiliary_functions.c
-  include/heli_MPC_EXPORT/acado_integrator.c
-  include/heli_MPC_EXPORT/acado_qpoases_interface.cpp
-  include/heli_MPC_EXPORT/acado_solver_sfunction.c
-  include/heli_MPC_EXPORT/acado_solver.c
-  include/heli_MPC_EXPORT/qpoases/SRC/Bounds.cpp
-  include/heli_MPC_EXPORT/qpoases/SRC/Constraints.cpp
-  include/heli_MPC_EXPORT/qpoases/SRC/CyclingManager.cpp
-  include/heli_MPC_EXPORT/qpoases/SRC/Indexlist.cpp
-  include/heli_MPC_EXPORT/qpoases/SRC/MessageHandling.cpp
-  include/heli_MPC_EXPORT/qpoases/SRC/QProblem.cpp
-  include/heli_MPC_EXPORT/qpoases/SRC/QProblemB.cpp
-  include/heli_MPC_EXPORT/qpoases/SRC/SubjectTo.cpp
-  include/heli_MPC_EXPORT/qpoases/SRC/Utils.cpp
-)
-
-target_link_libraries(mpc_node ${catkin_LIBRARIES})
-
-add_dependencies(mpc_node
-  mpc_node_generate_messages_cpp
-)
