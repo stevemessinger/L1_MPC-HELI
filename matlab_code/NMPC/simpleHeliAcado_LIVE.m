@@ -199,9 +199,9 @@ for i = 1:2
             count = 1;
         end
         u_mpc(:,k,i) = out.U';
-        %************************************
-        %THIS GOES IN THE SIMULATION LOOP 
-        %************************************
+        %**************
+        %L1 ADAPTATION
+        %**************
     
         %deconstruct state vector 
         p_n = x(k,1,i); p_e = x(k,2,i); p_d = x(k,3,i);

@@ -1,42 +1,70 @@
+%{
+Proccess flight test data to model control system of MT OMP Hobby
+Helicopter 
 
+Parameter extraction from FT2
+Model Validation on flipsvicon 
+
+Data: 
+    FT2IMU - step tests in all 6 DOF IMU data collected from BNO055
+    FT2tar - taranis stick input data for step tests in all 6 DOF
+
+    flipsvicon - VICON data for flips indoors 
+%}
+clear all
 close all
 clc 
 
+%% IMPORT DATA 
+% IMU data: [time(1) a_x(2) a_y(3) a_z(4) g_x(5) g_y(6) g_z(7)]   
+% VICON data: [time(1) x_pos(2) y_pos(3) z_pos(4) q_x(5) q_y(6) q_z(7)
+% q_w(8)] 
 load('FT2.mat')
+load('flips_vicon.mat')
+load('angular_tf.mat')
 
-figure('name', 'angular response')
-subplot(3,1,1)
-plot(FT2IMU{:,13},FT2IMU{:,5})
-hold on 
-plot(FT2tar{:,2},FT2tar{:,3}*348)
-% xlim([120,180])
-ylabel('\phi')
-subplot(3,1,2)
-plot(FT2IMU{:,13},FT2IMU{:,6})
-hold on 
-plot(FT2tar{:,2},FT2tar{:,4}*-348)
-% xlim([120,180])
-ylabel('\theta')
-subplot(3,1,3)
-plot(FT2IMU{:,13},FT2IMU{:,7})
-hold on 
-plot(FT2tar{:,2},FT2tar{:,6}*-600)
-% xlim([120,180])
-ylabel('\psi')
+%% ANGULAR System ID 
+%*********************
+%interpolate values to be used in system ID toolbox
+% rt1 = interp1(FT2IMU{2:end,13}, FT2IMU{2:end,5}, FT2tar{2:end,2}); 
+% pt1 = interp1(FT2IMU{2:end,13}, FT2IMU{2:end,6}, FT2tar{2:end,2});
+% yt1 = interp1(FT2IMU{2:end,13}, FT2IMU{2:end,7}, FT2tar{2:end,2});
 
-for i = 1:length(FT2tar{:,5})
-    if 116.4 < FT2tar{i,2} && FT2tar{i,2} < 117.3 || 120.3 < FT2tar{i,2} && FT2tar{i,2} < 121.5 || 125.76 < FT2tar{i,2} && FT2tar{i,2} < 126.6 || 130.3 < FT2tar{i,2} && FT2tar{i,2} < 131.08
-        u(i) = -(FT2tar{i,5} + 0.75);
-    else 
-        u(i) = (FT2tar{i,5} + 0.75);
+%print parameters
+print_p = ['The roll parameters are: tau = ',num2str(1/roll_tf.Denominator(2)),', K_p = ', num2str(roll_tf.Numerator/roll_tf.Denominator(2))];
+print_q = ['The pitch parameters are: tau = ',num2str(1/pitch_tf.Denominator(2)),', K_q = ', num2str(pitch_tf.Numerator/pitch_tf.Denominator(2))];
+print_r = ['The yaw parameters are: tau = ',num2str(1/yaw_tf.Denominator(2)),', K_r = ', num2str(yaw_tf.Numerator/yaw_tf.Denominator(2))];
+disp(print_p);
+disp(print_q);
+disp(print_r);
+
+%% LINEAR SYSTEM ID
+%********************
+%interpolate values to be used in system ID toolbox
+zt1 = interp1(FT2IMU{2:end,13}, FT2IMU{2:end,4}, FT2tar{2:end,2});
+
+%% PLOTTING 
+a = -1; 
+i=1; 
+input_z = zeros(1,length(FT2tar{2:end,2}));
+while i < length(FT2tar{2:end,2})
+    if FT2tar{1+i,5} > -0.74
+        input_z(i) = 0; 
+    else
+        if abs(FT2tar{1+i,5}) > 0.99
+            while abs(FT2tar{1+i,5}) > 0.99
+                input_z(i) = a*(FT2tar{1+i,5}+0.75);
+                i = i+1; 
+            end
+            a = -1*a; 
+        end
+        input_z(i) = a*(FT2tar{1+i,5}+0.75); 
     end
+    i=i+1;
 end
 
-figure('name','linear z accel')
-plot(FT2IMU{800:end-1,13},cumtrapz(diff(FT2IMU{800:end,13})',FT2IMU{800:end-1,4}'))
-hold on 
-% plot(FT2tar{:,2},(0.75 + FT2tar{:,5})*-80)
-% plot(FT2tar{1800:end,2},u(1800:end)*-80)
-ylabel('z')
-% xlim([110,140])
-
+figure('name','z accleration')
+subplot(2,1,1) 
+plot(FT2tar{2:end,2},zt1,FT2tar{2:end,2},input_z*100)
+subplot(2,1,2)
+plot(FT2tar{2:end,2},FT2tar{2:end,5})
