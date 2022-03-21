@@ -65,7 +65,7 @@ bool mpcController::loop(){
 	auto status = acado_feedbackStep();
 
     // get the inputs and publish them
-    inputs.thrust = acadoVariables.u[0];
+    inputs.col = acadoVariables.u[0];
     inputs.roll = acadoVariables.u[1];
     inputs.pitch = acadoVariables.u[2];
     inputs.yaw = acadoVariables.u[3];
