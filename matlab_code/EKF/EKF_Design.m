@@ -13,7 +13,7 @@ Important Note:
 %}
 
 clear all 
-close all 
+% close all 
 clc
 
 % IMU data organized as follows 
@@ -45,10 +45,8 @@ switch run_case
         vicon_data(:,1) = vicon_data(:,1).*(1e-9);
 end
 
-% vicon_data = [vicon_data(:,1:4) filloutliers(vicon_data(:,5:8),'clip','movmedian',20)];
-
 %EKF filter operating specifications
-ekf_freq = 100; 
+ekf_freq = 200; 
 
 % hardware specifications 
 imu_freq = 1/(mean(imu_data(2:end,1) - imu_data(1:end-1,1))); % update frequency of imu (Hz)
@@ -63,7 +61,7 @@ ekf_time = vicon_data(1,1):1/ekf_freq:length(vicon_data)*(1/ekf_freq);
 [max_freq,I] = max([ekf_freq,imu_freq,vicon_freq]);
 switch I
     case 1
-        dt = 0:1/max_freq:max(length(vicon_data),length(imu_data))*(1/max_freq); 
+        dt = (1/max_freq)*ones(max(length(vicon_data),length(imu_data)),1); 
     case 2
         dt = imu_data(2:end,1) - imu_data(1:end-1,1); 
     case 3
@@ -83,8 +81,8 @@ time = zeros(1,max(length(vicon_data),length(imu_data)));
 %assign initial conditions
 time(1) = vicon_data(1,1); 
 vicon(1,:) = vicon_data(1,2:8);
-x_hat(1,:) = [vicon_data(1,2:4) 1  -1.5 0 vicon_data(1,8) vicon_data(1,5:7) 0.00001 0.00001 0.00001 0.00001 0.00001 0.00001 ]; 
-
+% x_hat(1,:) = [vicon_data(1,2:4) 1  -1.5 0 vicon_data(1,8) vicon_data(1,5:7) 0.00001 0.00001 0.00001 0.00001 0.00001 0.00001 ]; 
+x_hat(1,:) = [0; 0; 0; 0; 0; 0; 1; 0; 0; 0; 0; 0; 0; 0; 0; 0];
 %EKF filter setup
 P(:,:,1) = eye(16); %initial covariance matrix
 Q = diag([   0.2^2      0.2^2      0.2^2   0.04^2  0.04^2  0.04^2   0.06^2 0.06^2 0.06^2 0.06^2   0.000^2     0.000^2     0.000^2    0.000^2    0.000^2     0.000^2]);
