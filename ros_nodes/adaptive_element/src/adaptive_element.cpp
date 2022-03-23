@@ -3,7 +3,7 @@
 adaptiveElement::adaptiveElement(){
 
     poseSubscriber = nh.subscribe("pose",  500, &adaptiveElement::poseSubscriberCallback, this);
-    MPCSubscriber = nh.subscribe("input", 500, &adaptiveElement::MPCSubscriberCallback, this);
+    MPCSubscriber = nh.subscribe("mpc_input", 500, &adaptiveElement::MPCSubscriberCallback, this);
     inputsPublisher = nh.advertise<mpc_node::Inputs>("L1_inputs", 500);
 
     z_State = Eigen::VectorXd(6);

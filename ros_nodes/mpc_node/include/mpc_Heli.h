@@ -12,9 +12,9 @@
 #include "ros/ros.h"
 #include "ros/time.h"
 #include "ros/console.h"
-#include "mpc_node/Pose.h"
-#include "mpc_node/Inputs.h"
-#include "mpc_node/Trajectory.h"
+#include "heli_messages/Pose.h"
+#include "heli_messages/Inputs.h"
+#include "heli_messages/Trajectory.h"
 
 /* Some convenient definitions. */
 #define NX          ACADO_NX  /* Number of differential state variables.  */
@@ -42,9 +42,9 @@ public:
 
 private:
 
-    void poseCallback(const mpc_node::Pose::ConstPtr& poseMessage);
+    void poseCallback(const heli_messages::Pose::ConstPtr& poseMessage);
 
-    void trajectoryCallback(const mpc_node::Trajectory::ConstPtr& trajectoryMessage);
+    void trajectoryCallback(const heli_messages::Trajectory::ConstPtr& trajectoryMessage);
 
     ros::NodeHandle nh;
     ros::Subscriber poseSubscriber;
@@ -54,7 +54,7 @@ private:
     ACADOvariables acadoVariables;
     ACADOworkspace acadoWorkspace;
 
-    mpc_node::Inputs inputs;
+    heli_messages::Inputs inputs;
 
     bool verbose;
 };

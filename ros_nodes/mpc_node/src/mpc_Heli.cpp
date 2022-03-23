@@ -5,7 +5,7 @@ mpcController::mpcController(){
 
     poseSubscriber = nh.subscribe("pose", 500, &mpcController::poseCallback, this);
     trajSubscriber = nh.subscribe("trajectory", 500, &mpcController::trajectoryCallback, this);
-    inputPublisher = nh.advertise<mpc_node::Pose>("input", 500);
+    inputPublisher = nh.advertise<heli_messages::Pose>("input", 500);
 
     ROS_INFO("mpc Controller Created!");
 }
@@ -15,7 +15,7 @@ mpcController::mpcController(bool vrbs){
 
     poseSubscriber = nh.subscribe("pose", 500, &mpcController::poseCallback, this);
     trajSubscriber = nh.subscribe("trajectory", 500, &mpcController::trajectoryCallback, this);
-    inputPublisher = nh.advertise<mpc_node::Pose>("input", 500);
+    inputPublisher = nh.advertise<heli_messages::Pose>("mpc_input", 500);
 
     ROS_INFO("mpc Controller Created!");
 }
@@ -74,7 +74,7 @@ bool mpcController::loop(){
     return status;
 }
 
-void mpcController::poseCallback(const mpc_node::Pose::ConstPtr& poseMessage){
+void mpcController::poseCallback(const heli_messages::Pose::ConstPtr& poseMessage){
     // set the current pose after receiving pose update
     acadoVariables.x0[0] = poseMessage->x;
     acadoVariables.x0[1] = poseMessage->y;
@@ -91,7 +91,7 @@ void mpcController::poseCallback(const mpc_node::Pose::ConstPtr& poseMessage){
     acadoVariables.x0[12] = poseMessage->angz;
 }
 
-void mpcController::trajectoryCallback(const mpc_node::Trajectory::ConstPtr& trajectoryMessage){
+void mpcController::trajectoryCallback(const heli_messages::Trajectory::ConstPtr& trajectoryMessage){
     //set the current trajectory upon receiving new trajectory
     for(int i = 0; i < N; i++){
         acadoVariables.y[i*NY + 0] = trajectoryMessage->x[i];
