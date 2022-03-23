@@ -12,7 +12,7 @@ classdef EKF < handle
     end
     % private variables 
     properties(Access = private)
-        www = 1; 
+
     end
     
     methods
