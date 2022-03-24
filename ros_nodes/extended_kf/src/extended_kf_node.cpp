@@ -18,6 +18,7 @@ void imuCallback(const heli_messages::BNO::ConstPtr& imuMessage)
     imu[4] = imuMessage->gy;
     imu[5] = imuMessage->gz;
 }
+
 /*
 void viconCallback(const extended_kf::Vicon::ConstPtr& viconMessage)
 {
@@ -36,11 +37,13 @@ int main (int argc, char **argv)
     ros::init(argc, argv, "EKF_node");
     ros::NodeHandle nh;
 
-    ros::Subscriber imuSubscriber = nh.subscribe("/imu_data", 10, imuCallback);
+    ROS_INFO("EKF Node Initialized!");
+
+    ros::Subscriber imuSubscriber = nh.subscribe("BNOData", 500, imuCallback);
     //ros::Subscriber viconSubscriber = nh.subscribe("/vicon_data", 10, viconCallback);
     ros::Publisher posePublisher;
 
-    posePublisher = nh.advertise<heli_messages::Pose>("/ekf_pose", 10);
+    posePublisher = nh.advertise<heli_messages::Pose>("pose", 500);
 
     double x0[16]; 
     x0[0]=0; x0[1]=0; x0[2]=0; x0[3]=0; x0[4]=0; x0[5]=0; x0[6]=1; x0[7]=0;

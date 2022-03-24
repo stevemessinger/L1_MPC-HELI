@@ -5,17 +5,17 @@ mpcController::mpcController(){
 
     poseSubscriber = nh.subscribe("pose", 500, &mpcController::poseCallback, this);
     trajSubscriber = nh.subscribe("trajectory", 500, &mpcController::trajectoryCallback, this);
-    inputPublisher = nh.advertise<heli_messages::Pose>("input", 500);
+    inputPublisher = nh.advertise<heli_messages::Inputs>("mpc_input", 500);
 
     ROS_INFO("mpc Controller Created!");
 }
 
 mpcController::mpcController(bool vrbs){
-    verbose == vrbs;
+    verbose = vrbs;
 
     poseSubscriber = nh.subscribe("pose", 500, &mpcController::poseCallback, this);
     trajSubscriber = nh.subscribe("trajectory", 500, &mpcController::trajectoryCallback, this);
-    inputPublisher = nh.advertise<heli_messages::Pose>("mpc_input", 500);
+    inputPublisher = nh.advertise<heli_messages::Inputs>("mpc_input", 500);
 
     ROS_INFO("mpc Controller Created!");
 }
@@ -69,6 +69,9 @@ bool mpcController::loop(){
     inputs.roll = acadoVariables.u[1];
     inputs.pitch = acadoVariables.u[2];
     inputs.yaw = acadoVariables.u[3];
+    
+    // need to add throttle curve and set kill switch
+
     inputPublisher.publish(inputs);
 
     return status;
