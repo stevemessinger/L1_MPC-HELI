@@ -3,8 +3,8 @@
 adaptiveElement::adaptiveElement(){
 
     poseSubscriber = nh.subscribe("pose",  500, &adaptiveElement::poseSubscriberCallback, this);
-    MPCSubscriber = nh.subscribe("input", 500, &adaptiveElement::MPCSubscriberCallback, this);
-    inputsPublisher = nh.advertise<mpc_node::Inputs>("L1_inputs", 500);
+    MPCSubscriber = nh.subscribe("mpc_input", 500, &adaptiveElement::MPCSubscriberCallback, this);
+    inputsPublisher = nh.advertise<heli_messages::Inputs>("L1_inputs", 500);
 
     z_State = Eigen::VectorXd(6);
     g = {0, 0, 9.81};
@@ -21,6 +21,8 @@ adaptiveElement::adaptiveElement(){
     PHI = Eigen::MatrixXd(6,6);
     w_co = 15;
     previousTime = ros::Time::now().toSec();
+
+    ROS_INFO("Adaptive Element Initialized!");
 }
 
 adaptiveElement::~adaptiveElement(){
@@ -79,8 +81,15 @@ void adaptiveElement::loop(){
 
     //assign the desired dynamics
     Eigen::Vector3d temp1 = g + T_mpc*e_zb;
-    f = {g + T_mpc*e_zb, M_mpc};
-    
+
+    f(0) = temp1(0);
+    f(1) = temp1(1);
+    f(2) = temp1(2);
+    f(3) = M_mpc(3);
+    f(4) = M_mpc(4);
+    f(5) = M_mpc(5);
+
+
     //calculate the matched Uncertainty
     g_matched(0,0) = e_zb(0);
     g_matched(1,0) = e_zb(1);
@@ -114,7 +123,7 @@ void adaptiveElement::loop(){
     zHat = zHat + (f + g_matched*(inputs + sigma_m) + g_unmatched * sigma_um + A_s*(zHat - z_State))*dt;
 
     //publish input + MPC input
-    mpc_node::Inputs msg;
+    heli_messages::Inputs msg;
     msg.col = inputs(0) + mpcInputs.col;
     msg.roll = inputs(1) + mpcInputs.roll;
     msg.pitch = inputs(2) + mpcInputs.pitch;
@@ -122,10 +131,10 @@ void adaptiveElement::loop(){
     inputsPublisher.publish(msg);
 }
 
-void adaptiveElement::poseSubscriberCallback(const mpc_node::PoseConstPtr& msg){
+void adaptiveElement::poseSubscriberCallback(const heli_messages::Pose::ConstPtr& msg){
     currentPose = *msg;
 }
 
-void adaptiveElement::MPCSubscriberCallback(const mpc_node::InputsConstPtr& msg){
+void adaptiveElement::MPCSubscriberCallback(const heli_messages::Inputs::ConstPtr& msg){
     mpcInputs = *msg;
 }

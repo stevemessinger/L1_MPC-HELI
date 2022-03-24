@@ -3,11 +3,13 @@
 #include "ros/ros.h"
 #include "ros/time.h"
 #include "ros/console.h"
-#include "mpc_node/Pose.h"
-#include "mpc_node/Inputs.h"
+#include "heli_messages/Pose.h"
+#include "heli_messages/Inputs.h"
 
 //3rd party includes
 #include <Eigen/Dense>
+#include <Eigen/Core>
+#include <unsupported/Eigen/MatrixFunctions>
 
 class adaptiveElement{
 public:
@@ -17,12 +19,11 @@ public:
 
     void loop();
 
-
 private:
 
-    void poseSubscriberCallback(const mpc_node::PoseConstPtr& msg);
+    void poseSubscriberCallback(const heli_messages::Pose::ConstPtr& msg);
 
-    void MPCSubscriberCallback(const mpc_node::InputsConstPtr& msg);
+    void MPCSubscriberCallback(const heli_messages::Inputs::ConstPtr& msg);
 
     // node variables
     ros::NodeHandle nh;
@@ -31,8 +32,8 @@ private:
     ros::Publisher inputsPublisher;
 
     // messaging variables
-    mpc_node::Pose currentPose;
-    mpc_node::Inputs mpcInputs;
+    heli_messages::Pose currentPose;
+    heli_messages::Inputs mpcInputs;
 
     // L1 Variables
     Eigen::Matrix3d Rbi;
@@ -43,7 +44,7 @@ private:
     Eigen::VectorXd zHat;
     Eigen::Vector4d inputs;
     Eigen::Vector3d g;
-    Eigen::Vector3d f;
+    Eigen::VectorXd f;
     Eigen::MatrixXd g_matched;
     Eigen::MatrixXd g_unmatched;
     Eigen::MatrixXd A_s;

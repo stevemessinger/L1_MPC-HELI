@@ -1,12 +1,23 @@
+from ast import Global
+from email import message
+import string
 import rospy
-from espcomm.msg import BNO
 import websocket
+import types
+from espcomm.msg import BNO
+from heli_messages.msg import Inputs
 
+command = "0:0:0:0:0"
+def inputCallback(msg):
+    global command
+    command = str(msg.roll) + ":" + str(msg.pitch) + ":" + str(msg.throttle) + ":" + str(msg.yaw) + ":" + str(msg.col)
+    return
 
 def publishBNOData():
-    pub = rospy.Publisher('BNOData', BNO, queue_size=10)
     rospy.init_node('espcomm', anonymous=True)
-    rate = rospy.Rate(100) # 100hz
+    pub = rospy.Publisher('BNOData', BNO, queue_size=100)
+    rospy.Subscriber('L1_inputs', Inputs, inputCallback)
+    rate = rospy.Rate(500) # 100hz
     msg = BNO()
 
     connected = False
@@ -21,7 +32,7 @@ def publishBNOData():
     print("Connected!")
 
     while not rospy.is_shutdown():
-        ws.send('r')
+        ws.send(command)
         message = ws.recv()
         data = message.split(':')
 
@@ -39,6 +50,7 @@ def publishBNOData():
 
         pub.publish(msg)
         rate.sleep()
+    return
 
 if __name__ == '__main__':
     try:

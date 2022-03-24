@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   message_generation
+  heli_messages
 )
 
 ## System dependencies are found with CMake's conventions
@@ -48,12 +49,12 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  IMU.msg
-  Pose.msg
-  Vicon.msg
-)
+#add_message_files(
+#  FILES
+#  IMU.msg
+#  Pose.msg
+#  Vicon.msg
+#)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -210,6 +211,7 @@ include_directories(
 
 add_executable(extended_kf 
 src/extended_kf_node.cpp
+include/matlab/EKF.cpp
 )
+
 target_link_libraries(extended_kf ${catkin_LIBRARIES})
-add_dependencies(extended_kf extended_kf_generate_messages_cpp)
