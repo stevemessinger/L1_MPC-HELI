@@ -2,6 +2,7 @@
 
 
 int main(int argc, char** argv){
+    ros::init(argc, argv, "adaptive_element_node");
     ros::NodeHandle nh;
     adaptiveElement L1;
 

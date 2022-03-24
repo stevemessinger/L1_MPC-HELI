@@ -4,8 +4,8 @@ import string
 import rospy
 import websocket
 import types
-from espcomm.msg import BNO
 from heli_messages.msg import Inputs
+from heli_messages.msg import BNO
 
 command = "0:0:0:0:0"
 def inputCallback(msg):

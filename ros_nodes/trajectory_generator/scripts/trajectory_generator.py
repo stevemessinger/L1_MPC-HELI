@@ -1,49 +1,9 @@
 from threading import Thread
-
-from sympy import Float
 import rospy
 import numpy as np
 
-
-def console_input(filename, substr, new_substr):
-    print(f'Processing the file {filename}')
-    # get the contents of the file
-    with open(filename, 'r') as f:
-        content = f.read()
-
-    # replace the substr by new_substr
-    content = content.replace(substr, new_substr)
-
-    # write data into the file
-    with open(filename, 'w') as f:
-        f.write(content)
-
-
-def main():
-    filenames = [
-        'c:/temp/test1.txt',
-        'c:/temp/test2.txt',
-        'c:/temp/test3.txt',
-        'c:/temp/test4.txt',
-        'c:/temp/test5.txt',
-        'c:/temp/test6.txt',
-        'c:/temp/test7.txt',
-        'c:/temp/test8.txt',
-        'c:/temp/test9.txt',
-        'c:/temp/test10.txt',
-    ]
-
-    # create threads
-    threads = [Thread(target=replace, args=(filename, 'id', 'ids'))
-            for filename in filenames]
-
-    # start the threads
-    for thread in threads:
-        thread.start()
-
-    # wait for the threads to complete
-    for thread in threads:
-        thread.join()
+from heli_messages.msg import Inputs
+from heli_messages.msg import Trajectory
 
 
 class Trajectory_Gen: 
@@ -58,7 +18,7 @@ class Trajectory_Gen:
         #ROS initializations
         rospy.init_node('traj_gen', anonymous=True)
         self.rate = rospy.Rate(50)
-        self.sticksPublisher = rospy.Publisher("/stick_cmd", Sticks, queue_size=10)
+        self.sticksPublisher = rospy.Publisher('L1_inputs', Inputs, queue_size=10)
         self.trajPublisher = rospy.Publisher("/traj_cmd", Trajectory, queue_size=10)
     
     def generate_takeoff_traj(self, dt, height): 
