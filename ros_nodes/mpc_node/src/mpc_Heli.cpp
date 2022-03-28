@@ -1,5 +1,6 @@
 #include  "../include/mpc_Heli.h"
 
+
 mpcController::mpcController(){
     verbose == false;
 
@@ -8,7 +9,10 @@ mpcController::mpcController(){
     inputPublisher = nh.advertise<heli_messages::Inputs>("mpc_input", 500);
 
     ROS_INFO("mpc Controller Created!");
+
+    
 }
+
 
 mpcController::mpcController(bool vrbs){
     verbose = vrbs;
@@ -20,13 +24,19 @@ mpcController::mpcController(bool vrbs){
     ROS_INFO("mpc Controller Created!");
 }
 
-
+// Destructor
 mpcController::~mpcController(){
 
 }
 
+
+// Initialize the controller
 bool mpcController::init(){
-    acado_initializeSolver();
+
+    if(!acado_initializeSolver()){
+        ROS_ERROR("mpcController: Failed to initialize solver!");
+        return false;
+    };
 
     int    i, iter;
     acado_timer t;
@@ -43,18 +53,23 @@ bool mpcController::init(){
         for (i = 0; i < NX; ++i) acadoVariables.x0[ i ] = 0.1;
     #endif
 
-    if(verbose) acado_printHeader();
+    if(verbose) 
+    {
+        acado_printHeader();
+    };
 
 	/* Prepare first step */
-	acado_preparationStep();
+	if(!acado_preparationStep()){
+        ROS_ERROR("mpcController: Failed to prepare first step!");
+        return false;
+    }
 
 	/* Get the time before start of the loop. */
 	acado_tic( &t );
     
-    ROS_INFO("Controller Initialized!");
-
     return true;
 }
+
 
 bool mpcController::loop(){
 
