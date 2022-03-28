@@ -20,6 +20,11 @@ class Trajectory_Gen:
         self.rate = rospy.Rate(50)
         self.sticksPublisher = rospy.Publisher('L1_inputs', Inputs, queue_size=10)
         self.trajPublisher = rospy.Publisher("/traj_cmd", Trajectory, queue_size=10)
+        # make dictionary of possible user inputs and set the entries to the respective functions
+        self.inputDict = {
+            "exit": self.initialize_input,
+            "manual": self.manual_mode
+        }
     
     def generate_takeoff_traj(self, dt, height): 
         # generates a trajectory a from (0,0,0) to height with time steps dt at a velocity of 1 m/s
@@ -41,8 +46,11 @@ class Trajectory_Gen:
 
     def console_input(self): 
         while not rospy.is_shutdown():
-            something = input()
-            print("thread 1 is running" + something)
+            # ask and get user command 
+            print("input command: ")
+            user_input = input()
+            #perform action based on command 
+            self.inputDict.get(user_input, lambda: print("invalid input"))()
 
     def publish_topics(self): 
         while not rospy.is_shutdown():
