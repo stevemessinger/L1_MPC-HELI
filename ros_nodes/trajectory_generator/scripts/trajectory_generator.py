@@ -19,7 +19,7 @@ class Trajectory_Gen:
         rospy.init_node('traj_gen', anonymous=True)
         self.rate = rospy.Rate(50)
         self.sticksPublisher = rospy.Publisher('L1_inputs', Inputs, queue_size=10)
-        self.trajPublisher = rospy.Publisher("/traj_cmd", Trajectory, queue_size=10)
+        self.trajPublisher = rospy.Publisher("traj_cmd", Trajectory, queue_size=10)
         # make dictionary of possible user inputs and set the entries to the respective functions
         self.inputDict = {
             "exit": self.initialize_input,

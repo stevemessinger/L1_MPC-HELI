@@ -35,7 +35,7 @@ def publishBNOData():
         ws.send(command)
         message = ws.recv()
         data = message.split(':')
-
+        
         msg.ax = float(data[0])
         msg.ay = float(data[1])
         msg.az = float(data[2])
