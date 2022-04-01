@@ -34,6 +34,9 @@ bfs::SbusTx sbus_tx(&Serial2);
 std::array<int16_t, bfs::SbusRx::NUM_CH()> sbus_data;
 int commands[4] = { 0, 0, 0, 0 };
 
+//FreeRTOS Globals
+static SemaphoreHandle_t mutex;
+
 //Websocket Callback
 void onWebSocketEvent(const uint8_t client_num,
     const WStype_t type,
@@ -153,6 +156,24 @@ void loop() {
     sbus_data[5] = commands[0]; // collective (Col - Pitch)
     sbus_tx.ch(sbus_data);
     sbus_tx.Write();
+
+    if (sbus_rx.Read()) {
+        /* Grab the received data */
+        sbus_data = sbus_rx.ch();
+        /* Display the received data */
+        for (int8_t i = 0; i < bfs::SbusRx::NUM_CH(); i++) {
+            Serial.print(sbus_data[i]);
+            Serial.print("\t");
+        }
+        /* Display lost frames and failsafe data */
+        Serial.print(sbus_rx.lost_frame());
+        Serial.print("\t");
+        Serial.println(sbus_rx.failsafe());
+        /* Set the SBUS TX data to the received data */
+        sbus_tx.ch(sbus_data);
+        /* Write the data to the servos */
+        sbus_tx.Write();
+    }
 
     // perform websocket application
     webSocket.loop();

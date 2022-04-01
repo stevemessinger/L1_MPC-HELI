@@ -15,7 +15,6 @@
 #define _VSARDUINO_H_
 #define __ESP32_esp32__
 #define __ESP32_ESP32__
-#define _VMDEBUG 1
 #define HAVE_CONFIG_H
 #define UNITY_INCLUDE_CONFIG_H
 #define WITH_POSIX
