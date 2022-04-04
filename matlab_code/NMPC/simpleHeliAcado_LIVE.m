@@ -44,7 +44,7 @@ BEGIN_ACADO;
     
     %% OCP
     startTime = 0;
-    endTime = 10;
+    endTime = 1;
     freq = 10;
     
     ocp = acado.OCP(startTime, endTime, endTime*freq);
@@ -193,7 +193,7 @@ for i = 1:2
     u_mpc(:,k,i) = out.U';
     while t(k)<endTime-1*dt
     
-        if count == 5
+        if count == 6
             tic;
             out = simpleHeliMPC_LIVE_RUN(x(k,:,i), t(k), trajectory);
             toc;
@@ -438,7 +438,23 @@ plot(t,z_hat(6,:,2))
 legend('actual','estimate')
 ylabel('r')
 
+figure('name', 'position error');
+subplot(3,1,1);
+plot(t, abs(x(:,1,1)-trajectory(:,2)), t, abs(x(:,1,2)-trajectory(:,2)));
+ylabel('x pos (m)');
+legend('MPC', 'L1+MPC');
 
+subplot(3,1,2); 
+plot(t, abs(x(:,2,1)-trajectory(:,3)), t, abs(x(:,2,2)-trajectory(:,3)));
+ylabel('y pos (m)');
+legend('MPC', 'L1+MPC');
+
+subplot(3,1,3);
+plot(t, abs(x(:,3,1)-trajectory(:,4)), t, abs(x(:,3,2)-trajectory(:,4)));
+ylim([-5,5])
+ylabel('z pos (m)');
+xlabel('time (sec)');
+legend('MPC', 'L1+MPC');
 
 
 
