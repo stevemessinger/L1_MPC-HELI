@@ -111,6 +111,8 @@ ACADOvariables acadoVariables;
 /** Instance of the private workspace structure. */
 ACADOworkspace acadoWorkspace;
 
+real_t QP_violation = 0;
+
 #if ACADO_QP_SOLVER == ACADO_FORCES
 #include "forces.h"
 extern forces_info acadoForces_info;
@@ -186,7 +188,7 @@ int getArray(	const unsigned mandatory,
 		destination = (real_t*)mxCalloc(nRows * nCols, sizeof( real_t ));
 
 	if (nRows == 1 && nCols == 1)
-		*destination = *dPtr;
+		*destination = (real_t)*dPtr;
 	else
 		for (i = 0; i < nRows; ++i)
 			for (j = 0; j < nCols; ++j)
@@ -208,7 +210,7 @@ void setArray( 	mxArray* destination,
 	unsigned i, j;
 	
 	if (nRows == 1 && nCols == 1)
-		*dPtr = *source;
+		*dPtr = (double)*source;
 	else
 		for (i = 0; i < nRows; ++i)
 			for(j = 0; j < nCols; ++j)
@@ -233,15 +235,15 @@ void mexFunction(	int nlhs,
 	real_t* uEnd = NULL;
 	const mxArray* src = prhs[ 0 ];
 	
-	const char *infoNames[ 5 ] = {"status", "cpuTime", "kktValue", "objValue", "nIterations"};
+	const char *infoNames[ 6 ] = {"status", "cpuTime", "kktValue", "objValue", "QP_iter", "QP_violation"};
 	mxArray* info;
 	real_t status, cpuTime, kktValue, objValue;
-	double tmp[ 1 ];
+	real_t tmp[ 1 ];
 	mxArray* shPtr;
 #ifndef _DSPACE
 	acado_timer tmr;
 #endif
-	double nIterations = 0;
+	real_t nIterations = 0;
 	
 	const char *outNames[ NOO_4 ];
 	outNames[ 0 ] = "info";
@@ -311,6 +313,16 @@ void mexFunction(	int nlhs,
 	getArray(1, src, 0, "W", acadoVariables.W, ACADO_N * ACADO_NY, ACADO_NY);
 	getArray(1, src, 0, "WN", acadoVariables.WN, ACADO_NYN, ACADO_NYN);
 #endif /* ACADO_WEIGHTING_MATRICES_TYPE */
+
+#if ACADO_USE_LINEAR_TERMS == 1
+#if ACADO_WEIGHTING_MATRICES_TYPE == 1
+	getArray(1, src, 0, "Wlx", acadoVariables.Wlx, ACADO_NX, 1);
+	getArray(1, src, 0, "Wlu", acadoVariables.Wlu, ACADO_NU, 1);
+#elif ACADO_WEIGHTING_MATRICES_TYPE == 2
+	getArray(1, src, 0, "Wlx", acadoVariables.Wlx, (ACADO_N+1) * ACADO_NX, 1);
+	getArray(1, src, 0, "Wlu", acadoVariables.Wlu, ACADO_N * ACADO_NU, 1);
+#endif /* ACADO_WEIGHTING_MATRICES_TYPE */
+#endif /* ACADO_USE_LINEAR_TERMS */
 
 
 #if (ACADO_HARDCODED_CONSTRAINT_VALUES == 0)
@@ -442,8 +454,8 @@ void mexFunction(	int nlhs,
 			kktValue = acado_getKKT();
 			objValue = acado_getObjective();
 
-#if ( (ACADO_QP_SOLVER == ACADO_QPOASES) || (ACADO_QP_SOLVER == ACADO_QPOASES3) )
-			nIterations = (double)acado_getNWSR();
+#if ( (ACADO_QP_SOLVER == ACADO_QPOASES) || (ACADO_QP_SOLVER == ACADO_QPOASES3) || (ACADO_QP_SOLVER == ACADO_GENERIC) )
+			nIterations = (real_t)acado_getNWSR();
 #elif ACADO_QP_SOLVER == ACADO_FORCES
 			nIterations = acadoForces_info.it;
 #elif ACADO_QP_SOLVER == ACADO_QPDUNES
@@ -487,8 +499,8 @@ void mexFunction(	int nlhs,
 			kktValue = acado_getKKT();
 			objValue = acado_getObjective();
 			
-#if ( (ACADO_QP_SOLVER == ACADO_QPOASES) || (ACADO_QP_SOLVER == ACADO_QPOASES3) )
-			nIterations = (double)acado_getNWSR();
+#if ( (ACADO_QP_SOLVER == ACADO_QPOASES) || (ACADO_QP_SOLVER == ACADO_QPOASES3) || (ACADO_QP_SOLVER == ACADO_GENERIC) )
+			nIterations = (real_t)acado_getNWSR();
 #elif ACADO_QP_SOLVER == ACADO_FORCES
 			nIterations = acadoForces_info.it;
 #endif /* ACADO_QP_SOLVER */
@@ -536,14 +548,15 @@ void mexFunction(	int nlhs,
 #endif /* ACADO_COMPUTE_COVARIANCE_MATRIX */
 
 	/* Create the info structure. */
-	info = mxCreateStructMatrix(1, 1, 5, infoNames);
+	info = mxCreateStructMatrix(1, 1, 6, infoNames);
 		
 	setArray(info, 0, "status", &status, 1, 1);
 	setArray(info, 0, "cpuTime", &cpuTime, 1, 1);
 	setArray(info, 0, "kktValue", &kktValue, 1, 1);
 	setArray(info, 0, "objValue", &objValue, 1, 1);
-#if ( (ACADO_QP_SOLVER == ACADO_QPOASES) || (ACADO_QP_SOLVER == ACADO_QPOASES3) )
-	setArray(info, 0, "nIterations", &nIterations, 1, 1);
+#if ( (ACADO_QP_SOLVER == ACADO_QPOASES) || (ACADO_QP_SOLVER == ACADO_QPOASES3) || (ACADO_QP_SOLVER == ACADO_GENERIC) )
+	setArray(info, 0, "QP_iter", &nIterations, 1, 1);
+	setArray(info, 0, "QP_violation", &QP_violation, 1, 1);
 #endif /* ( (ACADO_QP_SOLVER == ACADO_QPOASES) || (ACADO_QP_SOLVER == ACADO_QPOASES3) ) */
 		
 	mxSetField(plhs[ 0 ], 0, "info", info);

@@ -7,6 +7,7 @@ import math
 
 from heli_messages.msg import Inputs
 from heli_messages.msg import Trajectory
+from heli_messages.msg import KillSwitch
 
 
 class Trajectory_Gen: 
@@ -16,6 +17,8 @@ class Trajectory_Gen:
         self.stick_cmd = Inputs() #initialize stick commands to zero
         self.vehicle_state = 0 #initialize to manual (0) not controller (1) 
         self.trajectory = Trajectory() #initialize trajectory to zero
+        self.kill = KillSwitch() #initialize kill switch to zero
+        self.kill.killSwitch = 1 
         #threading initialization 
         self.t1 = Thread(target=self.console_input)
         self.t2 = Thread(target=self.publish_topics)
@@ -24,6 +27,7 @@ class Trajectory_Gen:
         self.rate = rospy.Rate(500)
         self.sticksPublisher = rospy.Publisher('L1_inputs', Inputs, queue_size=10)
         self.trajPublisher = rospy.Publisher("trajectory", Trajectory, queue_size=10)
+        self.killSwitchPublisher = rospy.Publisher("killSwitch", KillSwitch, queue_size=10)
         # make dictionary of possible user inputs and set the entries to the respective functions
         self.inputDict = {
             "exit": self.initialize_input,
@@ -72,6 +76,7 @@ class Trajectory_Gen:
             # hello_str = "hello world %s" % rospy.get_time()
             self.sticksPublisher.publish(self.stick_cmd)
             self.trajPublisher.publish(self.trajectory)
+            self.killSwitchPublisher.publish(self.kill)
             self.rate.sleep()
 
     def initialize_input(self):
@@ -144,9 +149,12 @@ class Trajectory_Gen:
 
     def start(self):
         print("starting!")
+        self.kill.killSwitch = 0
+        
         
     def stop(self):
         print("stopping!")
+        self.kill.killSwitch = 1
         
         
 

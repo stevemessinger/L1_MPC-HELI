@@ -93,7 +93,6 @@ int mpcController::loop(){
     inputs.roll = acadoVariables.u[1];
     inputs.pitch = acadoVariables.u[2];
     inputs.yaw = acadoVariables.u[3];
-    inputs.killSwitch = 1;
 
     // need to add throttle curve and set kill switch
 	// Shift states and control and prepare for the next iteration

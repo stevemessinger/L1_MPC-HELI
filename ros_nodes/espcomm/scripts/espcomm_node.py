@@ -8,30 +8,28 @@ import types
 import numpy
 from heli_messages.msg import Inputs
 from heli_messages.msg import BNO
+from heli_messages.msg import KillSwitch
 
 command = "0:0:0:0:0"
+throttle = int(1811)
 
 def inputCallback(msg):
     global command
+    global throttle
     roll = int(numpy.interp(msg.roll, [-1, 1], [337, 1646]))
-    pitch = int(numpy.interp(msg.roll, [-1, 1], [337, 1646]))
-
-    if msg.killSwitch:
-        throttle = int(1811)
-    else:
-        throttle = 337
-
-    yaw = int(numpy.interp(msg.roll, [-1, 1], [172, 1811]))
-    col = int(numpy.interp(msg.roll, [-1, 1], [1811, 172]))
+    pitch = int(numpy.interp(msg.pitch, [-1, 1], [337, 1646]))
+    yaw = int(numpy.interp(msg.yaw, [-1, 1], [172, 1811]))
+    col = int(numpy.interp(msg.col, [-1, 1], [1811, 172]))
 
     command = str(roll) + ":" + str(pitch) + ":" + str(throttle) + ":" + str(yaw) + ":" + str(col)
-
+    print(command)
     return
 
 def publishBNOData():
     rospy.init_node('espcomm', anonymous=True)
     pub = rospy.Publisher('BNOData', BNO, queue_size=100)
     rospy.Subscriber('mpc_input', Inputs, inputCallback)
+    rospy.Subscriber('killSwitch', KillSwitch, killSwitchCallback)
     rate = rospy.Rate(500) # 100hz
     msg = BNO()
 
@@ -68,6 +66,14 @@ def publishBNOData():
 
         pub.publish(msg)
         rate.sleep()
+    return
+
+def killSwitchCallback(msg):
+    global throttle
+    if msg.killSwitch:
+        throttle = int(1811)
+    else:
+        throttle = int(337)
     return
 
 if __name__ == '__main__':

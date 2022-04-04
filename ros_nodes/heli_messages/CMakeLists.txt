@@ -52,6 +52,7 @@ add_message_files(
   Inputs.msg
   Trajectory.msg
   BNO.msg
+  KillSwitch.msg
 )
 
 ## Generate services in the 'srv' folder
