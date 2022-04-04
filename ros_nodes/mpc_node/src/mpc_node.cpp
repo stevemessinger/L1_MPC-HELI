@@ -7,8 +7,6 @@ int main(int argc, char** argv){
     ros::Rate loop_rate(100);
 
     mpcController controller; // create the controller object
-
-    controller.init(); // init the solver
     
     for(ever){
 
