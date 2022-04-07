@@ -5,6 +5,7 @@
 #include "heli_messages/Pose.h"
 #include "heli_messages/BNO.h"
 #include "../include/matlab/EKF.h"
+#include "geometry_msgs/TransformStamped"
 
 double imu[6]; 
 double vicon[7]; 
@@ -19,8 +20,7 @@ void imuCallback(const heli_messages::BNO::ConstPtr& imuMessage)
     imu[5] = imuMessage->gz;
 }
 
-/*
-void viconCallback(const extended_kf::Vicon::ConstPtr& viconMessage)
+void viconCallback(const heli_messages::Vicon::ConstPtr& viconMessage)
 {
     vicon[0] = viconMessage->x; 
     vicon[1] = viconMessage->y; 
@@ -30,7 +30,7 @@ void viconCallback(const extended_kf::Vicon::ConstPtr& viconMessage)
     vicon[5] = viconMessage->qy; 
     vicon[6] = viconMessage->qz; 
 }
-*/
+
 
 int main (int argc, char **argv)
 {
@@ -39,8 +39,8 @@ int main (int argc, char **argv)
 
     ROS_INFO("EKF Node Initialized!");
 
-    ros::Subscriber imuSubscriber = nh.subscribe("BNOData", 500, imuCallback);
-    //ros::Subscriber viconSubscriber = nh.subscribe("/vicon_data", 10, viconCallback);
+    ros::Subscriber imuSubscriber = nh.subscribe("BNOData", 10, imuCallback);
+    ros::Subscriber viconSubscriber = nh.subscribe("/vicon/Explorer_M2/Explorer_M2", 10, viconCallback);
     ros::Publisher posePublisher;
 
     posePublisher = nh.advertise<heli_messages::Pose>("pose", 500);
