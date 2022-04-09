@@ -5,7 +5,7 @@
 // File: _coder_foo_api.cpp
 //
 // MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:02:55
+// C/C++ source code generated on  : 09-Apr-2022 14:54:34
 //
 
 // Include Files
@@ -34,6 +34,8 @@ static real_T (*b_emlrt_marshallIn(const emlrtStack *sp, const mxArray *u_mpc,
 static real_T (*b_emlrt_marshallIn(const emlrtStack *sp, const mxArray *u,
                                    const emlrtMsgIdentifier *parentId))[4];
 
+static const mxArray *b_emlrt_marshallOut(const real_T u[6]);
+
 static real_T c_emlrt_marshallIn(const emlrtStack *sp, const mxArray *dt,
                                  const char_T *identifier);
 
@@ -53,6 +55,8 @@ static real_T (*emlrt_marshallIn(const emlrtStack *sp, const mxArray *u,
                                  const emlrtMsgIdentifier *parentId))[13];
 
 static const mxArray *emlrt_marshallOut(const real_T u[4]);
+
+static const mxArray *emlrt_marshallOut(const real_T u);
 
 static real_T f_emlrt_marshallIn(const emlrtStack *sp, const mxArray *src,
                                  const emlrtMsgIdentifier *msgId);
@@ -89,6 +93,24 @@ static real_T (*b_emlrt_marshallIn(const emlrtStack *sp, const mxArray *u,
   real_T(*y)[4];
   y = e_emlrt_marshallIn(sp, emlrtAlias(u), parentId);
   emlrtDestroyArray(&u);
+  return y;
+}
+
+//
+// Arguments    : const real_T u[6]
+// Return Type  : const mxArray *
+//
+static const mxArray *b_emlrt_marshallOut(const real_T u[6])
+{
+  static const int32_T i{0};
+  static const int32_T i1{6};
+  const mxArray *m;
+  const mxArray *y;
+  y = nullptr;
+  m = emlrtCreateNumericArray(1, (const void *)&i, mxDOUBLE_CLASS, mxREAL);
+  emlrtMxSetData((mxArray *)m, (void *)&u[0]);
+  emlrtSetDimensions((mxArray *)m, &i1, 1);
+  emlrtAssign(&y, m);
   return y;
 }
 
@@ -215,6 +237,20 @@ static const mxArray *emlrt_marshallOut(const real_T u[4])
 }
 
 //
+// Arguments    : const real_T u
+// Return Type  : const mxArray *
+//
+static const mxArray *emlrt_marshallOut(const real_T u)
+{
+  const mxArray *m;
+  const mxArray *y;
+  y = nullptr;
+  m = emlrtCreateDoubleScalar(u);
+  emlrtAssign(&y, m);
+  return y;
+}
+
+//
 // Arguments    : const emlrtStack *sp
 //                const mxArray *src
 //                const emlrtMsgIdentifier *msgId
@@ -233,11 +269,12 @@ static real_T f_emlrt_marshallIn(const emlrtStack *sp, const mxArray *src,
 }
 
 //
-// Arguments    : const mxArray * const prhs[3]
-//                const mxArray **plhs
+// Arguments    : const mxArray * const prhs[5]
+//                int32_T nlhs
+//                const mxArray *plhs[6]
 // Return Type  : void
 //
-void foo_api(const mxArray *const prhs[3], const mxArray **plhs)
+void foo_api(const mxArray *const prhs[5], int32_T nlhs, const mxArray *plhs[6])
 {
   emlrtStack st{
       nullptr, // site
@@ -245,19 +282,47 @@ void foo_api(const mxArray *const prhs[3], const mxArray **plhs)
       nullptr  // prev
   };
   real_T(*x)[13];
+  real_T(*a)[6];
+  real_T(*a2)[6];
   real_T(*u)[4];
+  real_T(*u2)[4];
   real_T(*u_mpc)[4];
+  real_T adaptiveGain;
+  real_T b;
+  real_T b2;
+  real_T cutoffFrequency;
   real_T dt;
   st.tls = emlrtRootTLSGlobal;
   u = (real_T(*)[4])mxMalloc(sizeof(real_T[4]));
+  a = (real_T(*)[6])mxMalloc(sizeof(real_T[6]));
+  u2 = (real_T(*)[4])mxMalloc(sizeof(real_T[4]));
+  a2 = (real_T(*)[6])mxMalloc(sizeof(real_T[6]));
   // Marshall function inputs
   x = emlrt_marshallIn(&st, emlrtAlias(prhs[0]), "x");
   u_mpc = b_emlrt_marshallIn(&st, emlrtAlias(prhs[1]), "u_mpc");
   dt = c_emlrt_marshallIn(&st, emlrtAliasP(prhs[2]), "dt");
+  adaptiveGain = c_emlrt_marshallIn(&st, emlrtAliasP(prhs[3]), "adaptiveGain");
+  cutoffFrequency =
+      c_emlrt_marshallIn(&st, emlrtAliasP(prhs[4]), "cutoffFrequency");
   // Invoke the target function
-  foo(*x, *u_mpc, dt, *u);
+  foo(*x, *u_mpc, dt, adaptiveGain, cutoffFrequency, *u, *a, &b, *u2, *a2, &b2);
   // Marshall function outputs
-  *plhs = emlrt_marshallOut(*u);
+  plhs[0] = emlrt_marshallOut(*u);
+  if (nlhs > 1) {
+    plhs[1] = b_emlrt_marshallOut(*a);
+  }
+  if (nlhs > 2) {
+    plhs[2] = emlrt_marshallOut(b);
+  }
+  if (nlhs > 3) {
+    plhs[3] = emlrt_marshallOut(*u2);
+  }
+  if (nlhs > 4) {
+    plhs[4] = b_emlrt_marshallOut(*a2);
+  }
+  if (nlhs > 5) {
+    plhs[5] = emlrt_marshallOut(b2);
+  }
 }
 
 //

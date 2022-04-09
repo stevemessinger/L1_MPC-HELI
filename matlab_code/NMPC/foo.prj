@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.coder" plugin-version="R2021a">
-  <configuration build-checksum="3027203710" file="X:\NMPC_Heli\matlab_code\NMPC\foo.prj" location="X:\NMPC_Heli\matlab_code\NMPC" name="foo" target="target.unifiedcoder" target-name="MATLAB Coder">
+  <configuration build-checksum="3994923684" file="X:\NMPC_Heli\matlab_code\NMPC\foo.prj" location="X:\NMPC_Heli\matlab_code\NMPC" name="foo" target="target.unifiedcoder" target-name="MATLAB Coder">
     <profile key="profile.mex">
       <param.BuiltInstrumentedMex>false</param.BuiltInstrumentedMex>
       <param.RanInstrumentedMex>false</param.RanInstrumentedMex>
@@ -269,7 +269,7 @@
       <param.BuildConfiguration>Faster Runs</param.BuildConfiguration>
       <param.CustomToolchainOptions />
       <var.ToolchainSettingsVisible>true</var.ToolchainSettingsVisible>
-      <param.target.Data>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;ctdata&gt;&lt;configuredHardware&gt;&lt;hardware version="1.0"&gt;&lt;name&gt;Robot Operating System (ROS)&lt;/name&gt;&lt;customValues/&gt;&lt;/hardware&gt;&lt;/configuredHardware&gt;&lt;/ctdata&gt;</param.target.Data>
+      <param.target.Data>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;ctdata&gt;&lt;configuredHardware/&gt;&lt;/ctdata&gt;</param.target.Data>
       <param.target.ActiveType>option.target.TargetType.MatlabHost</param.target.ActiveType>
       <param.target.ActiveTarget />
       <param.HardwareVendor.Production>Generic</param.HardwareVendor.Production>
@@ -912,7 +912,7 @@
     <param.objective>option.objective.c</param.objective>
     <param.WorkflowStep>generateCode</param.WorkflowStep>
     <param.TestSnippets>
-      <item>u = foo([1,1,1,1,0,0,0,0,0,0,0,0,0]', [0,0,0,0]', 0.01)</item>
+      <item>foo([1,1,1,1,0,0,0,0,0,0,0,0,0]',[0,0,0,0]',0.01,5,15)</item>
     </param.TestSnippets>
     <param.ExternalFcnMajority>column</param.ExternalFcnMajority>
     <param.UseGlobals>option.UseGlobals.No</param.UseGlobals>
@@ -931,7 +931,7 @@
     <param.AutoInferUnboundedSizeThreshold>2048</param.AutoInferUnboundedSizeThreshold>
     <param.EnableFixedPointStep>false</param.EnableFixedPointStep>
     <param.EnableScreener>true</param.EnableScreener>
-    <param.AnnotationChecksum>378093482</param.AnnotationChecksum>
+    <param.AnnotationChecksum>2057807208</param.AnnotationChecksum>
     <var.LegacyTarget />
     <var.MirrorOnOpen>false</var.MirrorOnOpen>
     <param.FixedPointEnabled>false</param.FixedPointEnabled>
@@ -940,12 +940,12 @@
     <param.unifiedParamStorage />
     <var.gc.lastOutputRoot>codegen\lib\foo</var.gc.lastOutputRoot>
     <var.gc.lastOutputType>C_CODE</var.gc.lastOutputType>
-    <var.gc.preBuildChecksum>3027203710</var.gc.preBuildChecksum>
+    <var.gc.preBuildChecksum>3994923684</var.gc.preBuildChecksum>
     <var.cfi.lastOutputRoot>codegen\mex\foo</var.cfi.lastOutputRoot>
-    <var.cfi.preBuildChecksum>2021128245</var.cfi.preBuildChecksum>
-    <var.lastCfiTestSnippet>u = foo([1,1,1,1,0,0,0,0,0,0,0,0,0]', [0,0,0,0]', 0.01)</var.lastCfiTestSnippet>
+    <var.cfi.preBuildChecksum>4258732579</var.cfi.preBuildChecksum>
+    <var.lastCfiTestSnippet>foo([1,1,1,1,0,0,0,0,0,0,0,0,0]',[0,0,0,0]',0.01,5,15)</var.lastCfiTestSnippet>
     <var.outdatedOnRestore>false</var.outdatedOnRestore>
-    <var.lastUserSourceChecksum>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;checksum&gt;&lt;includedFiles&gt;&lt;file&gt;X:\NMPC_Heli\matlab_code\NMPC\foo.m&lt;/file&gt;&lt;file&gt;X:\NMPC_Heli\matlab_code\NMPC\L1_Controller.m&lt;/file&gt;&lt;/includedFiles&gt;&lt;value&gt;2991858332&lt;/value&gt;&lt;/checksum&gt;</var.lastUserSourceChecksum>
+    <var.lastUserSourceChecksum>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;checksum&gt;&lt;includedFiles&gt;&lt;file&gt;X:\NMPC_Heli\matlab_code\NMPC\foo.m&lt;/file&gt;&lt;file&gt;X:\NMPC_Heli\matlab_code\NMPC\L1_Controller.m&lt;/file&gt;&lt;/includedFiles&gt;&lt;value&gt;365963404&lt;/value&gt;&lt;/checksum&gt;</var.lastUserSourceChecksum>
     <var.sourceSetState>&lt;?xml version="1.0" encoding="UTF-8" standalone="yes"?&gt;&lt;sourceModel&gt;&lt;primarySourceFiles&gt;&lt;file&gt;X:\NMPC_Heli\matlab_code\NMPC\foo.m&lt;/file&gt;&lt;file&gt;X:\NMPC_Heli\matlab_code\NMPC\L1_Controller.m&lt;/file&gt;&lt;/primarySourceFiles&gt;&lt;fixedPointSourceFiles/&gt;&lt;fixedPointSourceRegistered&gt;false&lt;/fixedPointSourceRegistered&gt;&lt;fixedPointSourceSelected&gt;false&lt;/fixedPointSourceSelected&gt;&lt;/sourceModel&gt;</var.sourceSetState>
     <param.forceMexBuild>false</param.forceMexBuild>
     <param.NoDefaultJIT>false</param.NoDefaultJIT>
@@ -985,8 +985,8 @@
     <param.deeplearning.EnableDeepLearning>false</param.deeplearning.EnableDeepLearning>
     <param.deeplearning.TargetLib>option.deeplearning.targetlibrary.none</param.deeplearning.TargetLib>
     <var.cfiTargetLibSuppression>false</var.cfiTargetLibSuppression>
-    <var.hasMatlabDeepLearningSupportPackage>true</var.hasMatlabDeepLearningSupportPackage>
-    <var.hasGpuDeepLearningSupportPackage>true</var.hasGpuDeepLearningSupportPackage>
+    <var.hasMatlabDeepLearningSupportPackage>false</var.hasMatlabDeepLearningSupportPackage>
+    <var.hasGpuDeepLearningSupportPackage>false</var.hasGpuDeepLearningSupportPackage>
     <param.tensorrt.DataType>option.tensorrt.datatype.fp32</param.tensorrt.DataType>
     <param.tensorrt.DataPath />
     <param.tensorrt.NumCalibrationBatches>0</param.tensorrt.NumCalibrationBatches>
@@ -1106,8 +1106,6 @@
       <param.deeplearning.EnableDeepLearning />
       <param.deeplearning.TargetLib />
       <var.cfiTargetLibSuppression />
-      <var.hasMatlabDeepLearningSupportPackage />
-      <var.hasGpuDeepLearningSupportPackage />
       <param.tensorrt.DataType />
       <param.tensorrt.DataPath />
       <param.tensorrt.NumCalibrationBatches />
@@ -1167,7 +1165,7 @@
     </unset>
     <fileset.entrypoints>
       <file custom-data-expanded="false" value="${PROJECT_ROOT}\foo.m">
-        <Marker>1649526967866</Marker>
+        <Marker>1649530440548</Marker>
       </file>
     </fileset.entrypoints>
     <fileset.testbench />
@@ -1177,6 +1175,8 @@
           <Input Name="x" typeId="0" />
           <Input Name="u_mpc" typeId="1" />
           <Input Name="dt" typeId="2" />
+          <Input Name="adaptiveGain" typeId="2" />
+          <Input Name="cutoffFrequency" typeId="2" />
           <idpTable>
             <type typeId="0">
               <Class>double</Class>

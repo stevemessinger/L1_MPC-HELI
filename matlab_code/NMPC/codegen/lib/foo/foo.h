@@ -5,7 +5,7 @@
 // File: foo.h
 //
 // MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:02:55
+// C/C++ source code generated on  : 09-Apr-2022 14:54:34
 //
 
 #ifndef FOO_H
@@ -18,7 +18,8 @@
 
 // Function Declarations
 extern void foo(const double x[13], const double u_mpc[4], double dt,
-                double u[4]);
+                double adaptiveGain, double cutoffFrequency, double u[4],
+                double a[6], double *b, double u2[4], double a2[6], double *b2);
 
 #endif
 //

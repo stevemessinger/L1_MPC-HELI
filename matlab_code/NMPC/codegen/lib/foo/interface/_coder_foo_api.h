@@ -5,7 +5,7 @@
 // File: _coder_foo_api.h
 //
 // MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:02:55
+// C/C++ source code generated on  : 09-Apr-2022 14:54:34
 //
 
 #ifndef _CODER_FOO_API_H
@@ -22,9 +22,12 @@ extern emlrtCTX emlrtRootTLSGlobal;
 extern emlrtContext emlrtContextGlobal;
 
 // Function Declarations
-void foo(real_T x[13], real_T u_mpc[4], real_T dt, real_T u[4]);
+void foo(real_T x[13], real_T u_mpc[4], real_T dt, real_T adaptiveGain,
+         real_T cutoffFrequency, real_T u[4], real_T a[6], real_T *b,
+         real_T u2[4], real_T a2[6], real_T *b2);
 
-void foo_api(const mxArray *const prhs[3], const mxArray **plhs);
+void foo_api(const mxArray *const prhs[5], int32_T nlhs,
+             const mxArray *plhs[6]);
 
 void foo_atexit();
 

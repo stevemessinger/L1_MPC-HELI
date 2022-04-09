@@ -5,7 +5,7 @@
 // File: _coder_foo_mex.cpp
 //
 // MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:02:55
+// C/C++ source code generated on  : 09-Apr-2022 14:54:34
 //
 
 // Include Files
@@ -51,34 +51,40 @@ emlrtCTX mexFunctionCreateRootTLS()
 
 //
 // Arguments    : int32_T nlhs
-//                mxArray *plhs[1]
+//                mxArray *plhs[6]
 //                int32_T nrhs
-//                const mxArray *prhs[3]
+//                const mxArray *prhs[5]
 // Return Type  : void
 //
-void unsafe_foo_mexFunction(int32_T nlhs, mxArray *plhs[1], int32_T nrhs,
-                            const mxArray *prhs[3])
+void unsafe_foo_mexFunction(int32_T nlhs, mxArray *plhs[6], int32_T nrhs,
+                            const mxArray *prhs[5])
 {
   emlrtStack st{
       nullptr, // site
       nullptr, // tls
       nullptr  // prev
   };
-  const mxArray *outputs;
+  const mxArray *outputs[6];
+  int32_T b_nlhs;
   st.tls = emlrtRootTLSGlobal;
   // Check for proper number of arguments.
-  if (nrhs != 3) {
-    emlrtErrMsgIdAndTxt(&st, "EMLRT:runTime:WrongNumberOfInputs", 5, 12, 3, 4,
+  if (nrhs != 5) {
+    emlrtErrMsgIdAndTxt(&st, "EMLRT:runTime:WrongNumberOfInputs", 5, 12, 5, 4,
                         3, "foo");
   }
-  if (nlhs > 1) {
+  if (nlhs > 6) {
     emlrtErrMsgIdAndTxt(&st, "EMLRT:runTime:TooManyOutputArguments", 3, 4, 3,
                         "foo");
   }
   // Call the function.
-  foo_api(prhs, &outputs);
+  foo_api(prhs, nlhs, outputs);
   // Copy over outputs to the caller.
-  emlrtReturnArrays(1, &plhs[0], &outputs);
+  if (nlhs < 1) {
+    b_nlhs = 1;
+  } else {
+    b_nlhs = nlhs;
+  }
+  emlrtReturnArrays(b_nlhs, &plhs[0], &outputs[0]);
 }
 
 //

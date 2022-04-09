@@ -2,9 +2,6 @@ classdef L1_Controller < handle
     properties
         u_L1= zeros(4,1);
         u = zeros(4,1);
-    end
-
-    properties(Access = private)
         z_hat = zeros(6,1);
         % adaptive element parameters
         w_co = 0;
@@ -18,6 +15,9 @@ classdef L1_Controller < handle
         K_phi = 0;
         K_theta = 0;
         K_psi = 0;
+    end
+
+    properties(Access = private)
 
     end
 

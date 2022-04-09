@@ -5,7 +5,7 @@
 // File: _coder_foo_mex.h
 //
 // MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:02:55
+// C/C++ source code generated on  : 09-Apr-2022 14:54:34
 //
 
 #ifndef _CODER_FOO_MEX_H
@@ -22,8 +22,8 @@ MEXFUNCTION_LINKAGE void mexFunction(int32_T nlhs, mxArray *plhs[],
 
 emlrtCTX mexFunctionCreateRootTLS();
 
-void unsafe_foo_mexFunction(int32_T nlhs, mxArray *plhs[1], int32_T nrhs,
-                            const mxArray *prhs[3]);
+void unsafe_foo_mexFunction(int32_T nlhs, mxArray *plhs[6], int32_T nrhs,
+                            const mxArray *prhs[5]);
 
 #endif
 //

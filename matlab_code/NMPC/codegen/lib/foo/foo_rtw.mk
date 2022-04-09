@@ -2,7 +2,7 @@
 ## Makefile generated for component 'foo'. 
 ## 
 ## Makefile     : foo_rtw.mk
-## Generated on : Sat Apr 09 14:03:05 2022
+## Generated on : Sat Apr 09 14:54:38 2022
 ## Final product: .\foo.lib
 ## Product type : static-library
 ## 
@@ -182,7 +182,7 @@ DEFINES = $(DEFINES_CUSTOM) $(DEFINES_STANDARD)
 ## SOURCE FILES
 ###########################################################################
 
-SRCS = $(START_DIR)\codegen\lib\foo\foo_data.cpp $(START_DIR)\codegen\lib\foo\rt_nonfinite.cpp $(START_DIR)\codegen\lib\foo\rtGetNaN.cpp $(START_DIR)\codegen\lib\foo\rtGetInf.cpp $(START_DIR)\codegen\lib\foo\foo_initialize.cpp $(START_DIR)\codegen\lib\foo\foo_terminate.cpp $(START_DIR)\codegen\lib\foo\foo.cpp $(START_DIR)\codegen\lib\foo\inv.cpp $(START_DIR)\codegen\lib\foo\expm.cpp $(START_DIR)\codegen\lib\foo\xzgetrf.cpp
+SRCS = $(START_DIR)\codegen\lib\foo\foo_data.cpp $(START_DIR)\codegen\lib\foo\rt_nonfinite.cpp $(START_DIR)\codegen\lib\foo\rtGetNaN.cpp $(START_DIR)\codegen\lib\foo\rtGetInf.cpp $(START_DIR)\codegen\lib\foo\foo_initialize.cpp $(START_DIR)\codegen\lib\foo\foo_terminate.cpp $(START_DIR)\codegen\lib\foo\foo.cpp $(START_DIR)\codegen\lib\foo\inv.cpp $(START_DIR)\codegen\lib\foo\expm.cpp $(START_DIR)\codegen\lib\foo\xzgetrf.cpp $(START_DIR)\codegen\lib\foo\L1_Controller.cpp
 
 ALL_SRCS = $(SRCS)
 
@@ -190,7 +190,7 @@ ALL_SRCS = $(SRCS)
 ## OBJECTS
 ###########################################################################
 
-OBJS = foo_data.obj rt_nonfinite.obj rtGetNaN.obj rtGetInf.obj foo_initialize.obj foo_terminate.obj foo.obj inv.obj expm.obj xzgetrf.obj
+OBJS = foo_data.obj rt_nonfinite.obj rtGetNaN.obj rtGetInf.obj foo_initialize.obj foo_terminate.obj foo.obj inv.obj expm.obj xzgetrf.obj L1_Controller.obj
 
 ALL_OBJS = $(OBJS)
 
@@ -362,6 +362,10 @@ expm.obj : $(START_DIR)\codegen\lib\foo\expm.cpp
 
 xzgetrf.obj : $(START_DIR)\codegen\lib\foo\xzgetrf.cpp
 	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\xzgetrf.cpp
+
+
+L1_Controller.obj : $(START_DIR)\codegen\lib\foo\L1_Controller.cpp
+	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\L1_Controller.cpp
 
 
 ###########################################################################

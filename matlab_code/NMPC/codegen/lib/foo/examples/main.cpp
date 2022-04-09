@@ -5,7 +5,7 @@
 // File: main.cpp
 //
 // MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:02:55
+// C/C++ source code generated on  : 09-Apr-2022 14:54:34
 //
 
 /*************************************************************************/
@@ -93,15 +93,22 @@ static double argInit_real_T()
 static void main_foo()
 {
   double dv[13];
+  double a[6];
+  double a2[6];
   double dv1[4];
   double u[4];
+  double u2[4];
+  double b;
+  double b2;
+  double dt_tmp;
   // Initialize function 'foo' input arguments.
   // Initialize function input argument 'x'.
   // Initialize function input argument 'u_mpc'.
+  dt_tmp = argInit_real_T();
   // Call the entry-point 'foo'.
   argInit_13x1_real_T(dv);
   argInit_4x1_real_T(dv1);
-  foo(dv, dv1, argInit_real_T(), u);
+  foo(dv, dv1, dt_tmp, dt_tmp, dt_tmp, u, a, &b, u2, a2, &b2);
 }
 
 //
