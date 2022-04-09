@@ -209,7 +209,7 @@ include_directories(
 # catkin_add_nosetests(test)
 
 
-add_executable(extended_kf 
+add_executable(extended_kf
 src/extended_kf_node.cpp
 include/matlab/EKF.cpp
 )

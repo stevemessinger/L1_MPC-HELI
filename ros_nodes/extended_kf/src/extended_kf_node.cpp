@@ -4,6 +4,7 @@
 #include "ros/console.h"
 #include "heli_messages/Pose.h"
 #include "heli_messages/BNO.h"
+#include "geometry_msgs/TransformStamped.h"
 #include "../include/matlab/EKF.h"
 
 double imu[6]; 
@@ -19,18 +20,17 @@ void imuCallback(const heli_messages::BNO::ConstPtr& imuMessage)
     imu[5] = imuMessage->gz;
 }
 
-/*
-void viconCallback(const extended_kf::Vicon::ConstPtr& viconMessage)
+
+void viconCallback(const geometry_msgs::TransformStamped::ConstPtr& viconMessage)
 {
-    vicon[0] = viconMessage->x; 
-    vicon[1] = viconMessage->y; 
-    vicon[2] = viconMessage->z; 
-    vicon[3] = viconMessage->qw; 
-    vicon[4] = viconMessage->qx; 
-    vicon[5] = viconMessage->qy; 
-    vicon[6] = viconMessage->qz; 
+    vicon[0] = viconMessage->transform.translation.x; 
+    vicon[1] = viconMessage->transform.translation.y;
+    vicon[2] = viconMessage->transform.translation.z;
+    vicon[3] = viconMessage->transform.rotation.w; 
+    vicon[4] = viconMessage->transform.rotation.x; 
+    vicon[5] = viconMessage->transform.rotation.y; 
+    vicon[6] = viconMessage->transform.rotation.z; 
 }
-*/
 
 int main (int argc, char **argv)
 {
@@ -39,11 +39,11 @@ int main (int argc, char **argv)
 
     ROS_INFO("EKF Node Initialized!");
 
-    ros::Subscriber imuSubscriber = nh.subscribe("BNOData", 500, imuCallback);
-    //ros::Subscriber viconSubscriber = nh.subscribe("/vicon_data", 10, viconCallback);
+    ros::Subscriber imuSubscriber = nh.subscribe("BNOData", 1000, imuCallback);
+    ros::Subscriber viconSubscriber = nh.subscribe("/vicon/Explorer_M2/Explorer_M2", 1000, viconCallback);
     ros::Publisher posePublisher;
 
-    posePublisher = nh.advertise<heli_messages::Pose>("pose", 500);
+    posePublisher = nh.advertise<heli_messages::Pose>("pose", 1000);
 
     double x0[16]; 
     x0[0]=0; x0[1]=0; x0[2]=0; x0[3]=0; x0[4]=0; x0[5]=0; x0[6]=1; x0[7]=0;
@@ -58,7 +58,7 @@ int main (int argc, char **argv)
 
     double pastTime = ros::Time::now().toSec(); 
 
-    ros::Rate loop_rate(400);
+    ros::Rate loop_rate(500);
 
     while(ros::ok())
     {
