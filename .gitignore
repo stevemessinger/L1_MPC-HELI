@@ -39,3 +39,7 @@ octave-workspace
 *VC.*
 
 *.json
+esp_code/ESPController/ESPController/.vs/ESPController/v16/ipch/AutoPCH/70d2788e91489ca5/.ESPCONTROLLER.VSARDUINO.ipch
+esp_code/ESPController/ESPController/.vs/ESPController/v16/.suo
+esp_code/ESPController/ESPController/.vs/ESPController/v16/Browse.VC.db-wal
+*.ipch
