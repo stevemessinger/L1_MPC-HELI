@@ -106,9 +106,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES adaptive_element
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+  INCLUDE_DIRS include
+  LIBRARIES adaptive_element
+  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 
@@ -209,7 +209,13 @@ include_directories(
 # catkin_add_nosetests(test)
 add_executable(adaptive_element
   src/adaptive_element_node.cpp
-  src/adaptive_element.cpp
+  include/matlab/L1_Controller.cpp
+  include/matlab/inv.cpp
+  include/matlab/expm.cpp
+  include/matlab/rt_nonfinite.cpp
+  include/matlab/rtGetInf.cpp
+  include/matlab/rtGetNaN.cpp
+  include/matlab/xzgetrf.cpp
 )
 
 target_link_libraries(adaptive_element ${catkin_LIBRARIES})

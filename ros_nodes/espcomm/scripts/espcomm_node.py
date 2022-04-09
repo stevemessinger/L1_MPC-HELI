@@ -16,10 +16,10 @@ throttle = int(1811)
 def inputCallback(msg):
     global command
     global throttle
-    roll = int(numpy.interp(msg.roll, [-1, 1], [337, 1646]))
-    pitch = int(numpy.interp(msg.pitch, [-1, 1], [337, 1646]))
-    yaw = int(numpy.interp(msg.yaw, [-1, 1], [172, 1811]))
-    col = int(numpy.interp(msg.col, [-1, 1], [1811, 172]))
+    roll = int(numpy.interp(max(-1, min(msg.roll, 1)), [-1, 1], [337, 1646]))
+    pitch = int(numpy.interp(max(-1, min(msg.pitch,1)), [-1, 1], [337, 1646]))
+    yaw = int(numpy.interp(max(-1, min(msg.yaw, 1)), [-1, 1], [172, 1811]))
+    col = int(numpy.interp(max(-1, min(msg.col,1)), [-1, 1], [1811, 172]))
 
     command = str(roll) + ":" + str(pitch) + ":" + str(throttle) + ":" + str(yaw) + ":" + str(col)
     print(command)
@@ -28,7 +28,7 @@ def inputCallback(msg):
 def publishBNOData():
     rospy.init_node('espcomm', anonymous=True)
     pub = rospy.Publisher('BNOData', BNO, queue_size=100)
-    rospy.Subscriber('mpc_input', Inputs, inputCallback)
+    rospy.Subscriber('L1_inputs', Inputs, inputCallback)
     rospy.Subscriber('killSwitch', KillSwitch, killSwitchCallback)
     rate = rospy.Rate(500) # 100hz
     msg = BNO()
