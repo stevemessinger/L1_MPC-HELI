@@ -82,9 +82,9 @@ int mpcController::loop(){
 
     /* Perform the feedback step. */
 	status = acado_feedbackStep();
-    for (i = 0; i < NX; i++) acadoVariables.x0[i] = acadoVariables.x[NX + i]; //assume it moved that state
+    //for (i = 0; i < NX; i++) acadoVariables.x0[i] = acadoVariables.x[NX + i]; //assume it moved that state
 
-    std::cout << acadoVariables.x0[ 0 ] << ":" << acadoVariables.y[0] <<std::endl;
+    //std::cout << acadoVariables.x0[ 0 ] << ":" << acadoVariables.y[0] <<std::endl;
     
 	/* Apply the new control immediately to the process, first NU components. */
     
