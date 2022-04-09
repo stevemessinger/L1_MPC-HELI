@@ -189,7 +189,9 @@ for i = 1:2
 
     k = 1;
     count = 1;
+    tic;
     out = simpleHeliMPC_LIVE_RUN(x(k,:,i), t(k), trajectory);
+    tic;
     u_mpc(:,k,i) = out.U';
     while t(k)<endTime-1*dt
     
@@ -229,9 +231,9 @@ for i = 1:2
         g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
     
         PHI = inv(A_s)*(expm(A_s*dt) - eye(6)); 
-        G = [g g_T];
         mu = expm(A_s*dt)*(z_hat(:,k,i) - z(:,k,i)); 
-    
+        G = [g g_T];
+
         sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
         sigma_m = sigma(1:4); 
         sigma_um = sigma(5:6); 
