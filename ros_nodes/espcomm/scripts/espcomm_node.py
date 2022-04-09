@@ -1,22 +1,35 @@
 from ast import Global
 from email import message
+from ipaddress import collapse_addresses
 import string
 import rospy
 import websocket
 import types
+import numpy
 from heli_messages.msg import Inputs
 from heli_messages.msg import BNO
+from heli_messages.msg import KillSwitch
 
 command = "0:0:0:0:0"
+throttle = int(1811)
+
 def inputCallback(msg):
     global command
-    command = str(msg.roll) + ":" + str(msg.pitch) + ":" + str(msg.throttle) + ":" + str(msg.yaw) + ":" + str(msg.col)
+    global throttle
+    roll = int(numpy.interp(msg.roll, [-1, 1], [337, 1646]))
+    pitch = int(numpy.interp(msg.pitch, [-1, 1], [337, 1646]))
+    yaw = int(numpy.interp(msg.yaw, [-1, 1], [172, 1811]))
+    col = int(numpy.interp(msg.col, [-1, 1], [1811, 172]))
+
+    command = str(roll) + ":" + str(pitch) + ":" + str(throttle) + ":" + str(yaw) + ":" + str(col)
+    print(command)
     return
 
 def publishBNOData():
     rospy.init_node('espcomm', anonymous=True)
     pub = rospy.Publisher('BNOData', BNO, queue_size=100)
-    rospy.Subscriber('L1_inputs', Inputs, inputCallback)
+    rospy.Subscriber('mpc_input', Inputs, inputCallback)
+    rospy.Subscriber('killSwitch', KillSwitch, killSwitchCallback)
     rate = rospy.Rate(500) # 100hz
     msg = BNO()
 
@@ -36,20 +49,31 @@ def publishBNOData():
         message = ws.recv()
         data = message.split(':')
         
-        msg.ax = float(data[0])
-        msg.ay = float(data[1])
-        msg.az = float(data[2])
-        msg.gx = float(data[3])
-        msg.gy = float(data[4])
-        msg.gz = float(data[5])
-        msg.sysCal = float(data[6])
-        msg.accelCal = float(data[7])
-        msg.gyroCal = float(data[8])
-        msg.magCal = float(data[9])
-        msg.dt = float(data[10])
+        try:
+            msg.ax = float(data[0])
+            msg.ay = float(data[1])
+            msg.az = float(data[2])
+            msg.gx = float(data[3])
+            msg.gy = float(data[4])
+            msg.gz = float(data[5])
+            msg.sysCal = float(data[6])
+            msg.accelCal = float(data[7])
+            msg.gyroCal = float(data[8])
+            msg.magCal = float(data[9])
+            msg.dt = float(data[10])
+        except Exception as e:
+            print(e)
 
         pub.publish(msg)
         rate.sleep()
+    return
+
+def killSwitchCallback(msg):
+    global throttle
+    if msg.killSwitch:
+        throttle = int(1811)
+    else:
+        throttle = int(337)
     return
 
 if __name__ == '__main__':

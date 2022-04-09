@@ -1,3 +1,6 @@
+#ifndef MPC_HELI_H
+#define MPC_HELI_H
+
 #include "heli_MPC_EXPORT/acado_common.h"
 #include "heli_MPC_EXPORT/acado_auxiliary_functions.h"
 #include <iostream>
@@ -38,7 +41,7 @@ public:
 
     bool init();
 
-    bool loop();
+    int loop();
 
 private:
 
@@ -51,10 +54,13 @@ private:
     ros::Subscriber trajSubscriber;
     ros::Publisher inputPublisher;
 
-    ACADOvariables acadoVariables;
-    ACADOworkspace acadoWorkspace;
+    int i, iter;
+    acado_timer t;
+    int status;
 
     heli_messages::Inputs inputs;
 
     bool verbose;
 };
+
+#endif
