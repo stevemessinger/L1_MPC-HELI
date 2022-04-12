@@ -117,7 +117,7 @@ load('Melon1.mat');
 load('lemniscate.mat');
 load('circle.mat');
 circle(:,1) = circle(:,1) - circle(1,1);
-data = Melon1; % choose reference trajectory here
+data = lemniscate; % choose reference trajectory here
 
 trajectory = zeros(length(data(:,1)), 14);
 trajectory(:,1) = data(:,1);
@@ -189,7 +189,9 @@ for i = 1:2
 
     k = 1;
     count = 1;
+    tic;
     out = simpleHeliMPC_LIVE_RUN(x(k,:,i), t(k), trajectory);
+    tic;
     u_mpc(:,k,i) = out.U';
     while t(k)<endTime-1*dt
     
@@ -229,9 +231,9 @@ for i = 1:2
         g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
     
         PHI = inv(A_s)*(expm(A_s*dt) - eye(6)); 
-        G = [g g_T];
         mu = expm(A_s*dt)*(z_hat(:,k,i) - z(:,k,i)); 
-    
+        G = [g g_T];
+
         sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
         sigma_m = sigma(1:4); 
         sigma_um = sigma(5:6); 
@@ -239,7 +241,12 @@ for i = 1:2
         temp = [sigma_um(1:2);sigma_m(1)]; 
         sigm_temp(:,k,i) = [temp;sigma_m(2:4)]; 
         
+        % LPF on the adaption
         u_L1(:,k+1,i) = u_L1(:,k,i)*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
+
+        % No LPF on the adaption
+        %u_L1(:,k+1,i) = sigma_m;
+
         z_hat(:,k+1,i) = z_hat(:,k,i) + (f + g*(u_L1(:,k+1,i) + sigma_m) + g_T*sigma_um + A_s*(z_hat(:,k,i) - z(:,k,i)))*dt; 
     
         if i == 1

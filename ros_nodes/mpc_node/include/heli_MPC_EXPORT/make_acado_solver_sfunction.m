@@ -19,7 +19,7 @@
 %% Legacy code wrapper for the ACADO CGT generated OCP solver
 
 % Dimensions
-ACADO_N   = 50;
+ACADO_N   = 10;
 ACADO_NX  = 13;
 ACADO_NDX = 0;
 ACADO_NXA = 0;

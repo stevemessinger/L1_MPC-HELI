@@ -3,6 +3,7 @@
  Created:	3/21/2022 11:01:02 AM
  Author:	matthew
 */
+
 #include <sbus.h>
 #include <WiFi.h>
 #include <Wire.h>
@@ -32,7 +33,11 @@ int start, dt;
 bfs::SbusRx sbus_rx(&Serial2);
 bfs::SbusTx sbus_tx(&Serial2);
 std::array<int16_t, bfs::SbusRx::NUM_CH()> sbus_data;
-int commands[4] = { 0, 0, 0, 0 };
+int commands[5] = { 1000, 1000, 1811, 1000, 1000};
+
+//FreeRTOS Globals
+static SemaphoreHandle_t mutex;
+int outputStartTime, webSocketStartTime;
 
 //Websocket Callback
 void onWebSocketEvent(const uint8_t client_num,
@@ -65,21 +70,24 @@ void onWebSocketEvent(const uint8_t client_num,
     case WStype_TEXT:// upon reciving a message, parse channel commands and send IMU data back
     {
         // convert payload to char array
-        char* rcvMessage; // not sure why the compiler doesnt like this, length is const
+        char rcvMessage[length]; // not sure why the compiler doesnt like this, length is const
         for (int i = 0; i < length; i++) {
             rcvMessage[i] = *(payload + i);
         }
-        
+
         //Tokenize the received message 
         char* token;
         int i = 0;
         token = strtok(rcvMessage, ":");
         while (token != NULL) {
             commands[i] = atoi(token);
+            //Serial.print(commands[i]);
+            //Serial.print("\t");
             token = strtok(NULL, ":");
             i++;
         }
-
+        Serial.println();
+        
         //send the IMU data back to the client
         webSocket.sendTXT(client_num, message.c_str());
     }break;
@@ -96,8 +104,22 @@ void onWebSocketEvent(const uint8_t client_num,
     }
 }
 
+void websocketTask(void* parameter) {
+    for (;;) {
+        /// !!ENTERING CRITIAL SECTION!!
+        xSemaphoreTake(mutex, portMAX_DELAY);
+        webSocket.loop(); // perform websocket function
+        xSemaphoreGive(mutex);
+        Serial.print("WebSocket dt: ");
+        Serial.println(millis() - webSocketStartTime);
+        webSocketStartTime = millis();
+        /// !!ENDING CRITIAL SECTION!! 
+    }
+}
+
 // the setup function runs once when you press reset or power the board
 void setup() {
+
     Serial.begin(115200);
     WiFi.softAP(ssid, password);
     Serial.println("");
@@ -113,10 +135,20 @@ void setup() {
 
     webSocket.begin();
     webSocket.onEvent(onWebSocketEvent);
-    start = millis();
+    outputStartTime = millis();
+    webSocketStartTime = millis();
 
     sbus_rx.Begin(16,17);
     sbus_tx.Begin(16,17);
+
+    mutex = xSemaphoreCreateMutex();
+
+    xTaskCreate(websocketTask,
+        "websocketTask",
+        10000,
+        NULL,
+        1,
+        NULL);
 }
 
 // the loop function runs over and over again until power down or reset
@@ -142,18 +174,48 @@ void loop() {
     msg << std::fixed << std::setprecision(5) << ax << ":" << std::fixed << std::setprecision(5) << ay << ":" << std::fixed << std::setprecision(5) << az << ":"
         << std::fixed << std::setprecision(5) << wx << ":" << std::fixed << std::setprecision(5) << wy << ":" << std::fixed << std::setprecision(5) << wz << ":"
         << std::fixed << int(sys) << ":" << std::fixed << int(accel) << ":" << std::fixed << int(gyro) << ":" << std::fixed << int(mag) << ":" << std::fixed << int(dt);
+
+    /// !!ENTERING CRITAL SECTION!!
+    xSemaphoreTake(mutex, portMAX_DELAY);
     message = msg.str();
+    //Serial.println(message.c_str());
 
     //Send sbus packet
-    sbus_data[0] = commands[1]; // roll (A)
-    sbus_data[1] = commands[2]; // pitch (E)
-    sbus_data[2] = 1800; // throttle (T)
+    sbus_data[0] = commands[0]; // roll (A)
+    sbus_data[1] = commands[1]; // pitch (E)
+    sbus_data[2] = commands[2]; // throttle (T)
     sbus_data[3] = commands[3]; // yaw (R)
-    sbus_data[4] = 1500; // gyro (needs to be in 3D mode) (G)
-    sbus_data[5] = commands[0]; // collective (Col - Pitch)
+    sbus_data[4] = 988; // gyro (needs to be in 3D mode) (G)
+    sbus_data[5] = commands[4]; // collective (Col - Pitch)
+
+    //Serial.print("SBUS: ");
+    //for (int8_t i = 0; i < bfs::SbusRx::NUM_CH(); i++) {
+    //    Serial.print(sbus_data[i]);
+    //    Serial.print("\t");
+    //}
+    //Serial.println();
+    //if (sbus_rx.Read()) {
+    //    /* Grab the received data */
+    //    sbus_data = sbus_rx.ch();
+    //    /* Display the received data */
+    //    for (int8_t i = 0; i < bfs::SbusRx::NUM_CH(); i++) {
+    //        Serial.print(sbus_data[i]);
+    //        Serial.print("\t");
+    //    }
+    //    /* Display lost frames and failsafe data */
+    //    Serial.print(sbus_rx.lost_frame());
+    //    Serial.print("\t");
+    //    Serial.println(sbus_rx.failsafe());
+    //}
+
+    xSemaphoreGive(mutex);
+    /// !!END CRITICAL SECTION!!
+
+    // write the data
     sbus_tx.ch(sbus_data);
     sbus_tx.Write();
 
-    // perform websocket application
-    webSocket.loop();
+    Serial.print("Ouput dt: ");
+    Serial.println(millis() - outputStartTime);
+    outputStartTime = millis();
 }

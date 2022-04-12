@@ -103,7 +103,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+  INCLUDE_DIRS include
 #  LIBRARIES trajectory_generator
 #  CATKIN_DEPENDS roscpp rospy stdmsgs
 #  DEPENDS system_lib
@@ -116,7 +116,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -186,11 +186,10 @@ include_directories(
 # )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+install(FILES
+  src/lemniscate.txt
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+)
 
 #############
 ## Testing ##
@@ -207,9 +206,6 @@ include_directories(
 
 
 catkin_install_python(PROGRAMS scripts/trajectory_generator.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-catkin_install_python(PROGRAMS scripts/trajectory_generator.py
+  src/lemniscate.txt
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )

@@ -166,7 +166,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     acadodata_f1 << dot(q) == ((-2.00000000000000000000e+01)*q+3.49065850398865904936e+02*pitch);
     acadodata_f1 << dot(r) == ((-2.00000000000000000000e+01)*r+3.49065850398865904936e+02*yaw);
 
-    OCP ocp1(0, 10, 100);
+    OCP ocp1(0, 1, 10);
     ocp1.minimizeLSQ(acadodata_M1, acadodata_f2, acadodata_v2);
     ocp1.subjectTo(acadodata_f1);
     ocp1.subjectTo((-1.00000000000000000000e+00) <= col <= 1.00000000000000000000e+00);
