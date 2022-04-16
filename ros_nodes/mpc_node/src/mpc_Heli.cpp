@@ -45,6 +45,7 @@ mpcController::~mpcController(){
 // Initialize the controller
 bool mpcController::init(){
 
+
     if(acado_initializeSolver()){
         ROS_ERROR("mpcController: Failed to initialize solver!");
         return false;
@@ -80,29 +81,39 @@ bool mpcController::init(){
 
 int mpcController::loop(){
 
-    /* Perform the feedback step. */
-	status = acado_feedbackStep();
-    //for (i = 0; i < NX; i++) acadoVariables.x0[i] = acadoVariables.x[NX + i]; //assume it moved that state
+    if(nav){
+        /* Perform the feedback step. */
+        status = acado_feedbackStep();
+        //for (i = 0; i < NX; i++) acadoVariables.x0[i] = acadoVariables.x[NX + i]; //assume it moved that state
 
-    //std::cout << acadoVariables.x0[ 0 ] << ":" << acadoVariables.y[0] <<std::endl;
+        //std::cout << acadoVariables.x0[ 0 ] << ":" << acadoVariables.y[0] <<std::endl;
+        
+        /* Apply the new control immediately to the process, first NU components. */
+        
+        //get the inputs and publish them
+        inputs.col = acadoVariables.u[0];
+        inputs.roll = acadoVariables.u[1];
+        inputs.pitch = acadoVariables.u[2];
+        inputs.yaw = acadoVariables.u[3];
+        inputs.nav = nav;
+
+        // need to add throttle curve and set kill switch
+        // Shift states and control and prepare for the next iteration
+        //acado_shiftStates(2, 0, 0);
+        //acado_shiftControls( 0 );
+        inputPublisher.publish(inputs);
+        acado_preparationStep();
+    }else{
+
+        inputs.col = 0;
+        inputs.roll = 0;
+        inputs.pitch = 0;
+        inputs.yaw = 0;
+        inputs.nav = nav;
+        inputPublisher.publish(inputs);
+    }
+
     
-	/* Apply the new control immediately to the process, first NU components. */
-    
-    //get the inputs and publish them
-    inputs.col = acadoVariables.u[0];
-    inputs.roll = acadoVariables.u[1];
-    inputs.pitch = acadoVariables.u[2];
-    inputs.yaw = acadoVariables.u[3];
-
-    // need to add throttle curve and set kill switch
-	// Shift states and control and prepare for the next iteration
-	//acado_shiftStates(2, 0, 0);
-	//acado_shiftControls( 0 );
-    inputPublisher.publish(inputs);
-    
-
-    acado_preparationStep();
-
     return status;
 }
 
@@ -155,5 +166,7 @@ void mpcController::trajectoryCallback(const heli_messages::Trajectory::ConstPtr
     acadoVariables.yN[10] = trajectoryMessage->angx[i-1];
     acadoVariables.yN[11] = trajectoryMessage->angy[i-1];
     acadoVariables.yN[12] = trajectoryMessage->angz[i-1];
+
+    nav = trajectoryMessage->nav;
 }
 

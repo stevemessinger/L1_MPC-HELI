@@ -11,3 +11,5 @@ float32[10] vz
 float32[10] angx
 float32[10] angy
 float32[10] angz
+
+int8 nav

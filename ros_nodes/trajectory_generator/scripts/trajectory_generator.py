@@ -4,6 +4,7 @@ import rospy
 import numpy as np
 import time
 import math
+from pynput.keyboard import Key, Listener
 
 from heli_messages.msg import Inputs
 from heli_messages.msg import Trajectory
@@ -17,11 +18,13 @@ class Trajectory_Gen:
         self.stick_cmd = Inputs() #initialize stick commands to zero
         self.vehicle_state = 0 #initialize to manual (0) not controller (1) 
         self.trajectory = Trajectory() #initialize trajectory to zero
+        self.trajectory.nav = 0
         self.kill = KillSwitch() #initialize kill switch to zero
         self.kill.killSwitch = 1 
         #threading initialization 
         self.t1 = Thread(target=self.console_input)
         self.t2 = Thread(target=self.publish_topics)
+        self.t3 = Thread(target=self.killSwitchChecker)
         #ROS initializations
         rospy.init_node('traj_gen', anonymous=True)
         self.rate = rospy.Rate(500)
@@ -32,6 +35,8 @@ class Trajectory_Gen:
         self.inputDict = {
             "exit": self.initialize_input,
             "manual": self.manual_mode,
+            "takeoff": self.takeoff,
+            "land": self.land,
             "check surfaces" : self.check_surfaces,
             "lemniscate" : self.lemniscate,
             "circle" : self.circle,
@@ -41,27 +46,95 @@ class Trajectory_Gen:
         }
 
         # load in all the files
+        self.land_traj = np.loadtxt('/home/ros/Documents/catkin_ws/src/L1_MPC_HEli/ros_nodes/trajectory_generator/src/Land.txt', delimiter='\t', skiprows=1)
+        self.takeoff_traj = np.loadtxt('/home/ros/Documents/catkin_ws/src/L1_MPC_HEli/ros_nodes/trajectory_generator/src/Takeoff.txt', delimiter='\t', skiprows=1)
         self.lemniscate_traj = np.loadtxt('/home/ros/Documents/catkin_ws/src/L1_MPC_HEli/ros_nodes/trajectory_generator/src/lemniscate.txt', delimiter='\t', skiprows=1)
         #self.circle_traj = np.loadtxt('../include/circle.csv', delimiter=',', skiprows=1)
         #self.melon_traj = np.loadtxt('../include/melon.csv', delimiter=',', skiprows=1)
     
-    def generate_takeoff_traj(self, dt, height): 
-        # generates a trajectory a from (0,0,0) to height with time steps dt at a velocity of 1 m/s
-        # dt - how often to generate commands
-        # height - desired final takeoff height 
-        # state vector: [time pos_x pos_y pos_z q0 q1 q2 q3 vx vy vz wx wy wz]
+    def killSwitchChecker(self):
+        def on_press(key):
+            if key == Key.space:
+                print("Killing the vehicle!")
+                self.kill.killSwitch = 1
+                self.trajectory.nav = 0
+                return False
+        
+        def on_release(key):
+            return False
 
-        time_steps = int(height/dt)
-        self.takeoff_traj = np.full((14, time_steps+1), 0, dtype=float)
+        while not rospy.is_shutdown():
+            with Listener(on_press=on_press, on_release=on_release) as listener:
+                listener.join()
+            self.rate.sleep()
 
-        pos_z = 0 
-        time = 0
+    def takeoff(self):
+        print("executing takeoff!")
+        
+        endTime = self.takeoff_traj[-1,0]
 
-        for i in range(time_steps+1): 
-            self.takeoff_traj[0,i] = time
-            self.takeoff_traj[3, i] = pos_z
-            pos_z += dt
-            time += dt 
+        startTime = time.time()
+        i = 0
+        self.trajectory.nav = 1
+        while(time.time() - startTime < endTime):
+            if(time.time() - startTime > self.takeoff_traj[i,0]): 
+                if(i+10 >= self.takeoff_traj.shape[0]): 
+                    continue
+                else:
+                    i +=1
+                
+            self.trajectory.x = self.takeoff_traj[i:i+10, 1]
+            self.trajectory.y = self.takeoff_traj[i:i+10, 2]
+            self.trajectory.z = self.takeoff_traj[i:i+10, 3]
+            self.trajectory.qw = self.takeoff_traj[i:i+10, 4]
+            self.trajectory.qx = self.takeoff_traj[i:i+10, 5]
+            self.trajectory.qy = self.takeoff_traj[i:i+10, 6]
+            self.trajectory.qz = self.takeoff_traj[i:i+10, 7]
+            self.trajectory.vx = self.takeoff_traj[i:i+10, 8]
+            self.trajectory.vy = self.takeoff_traj[i:i+10, 9]
+            self.trajectory.vz = self.takeoff_traj[i:i+10, 10]
+            self.trajectory.angx = self.takeoff_traj[i:i+10, 11]
+            self.trajectory.angy = self.takeoff_traj[i:i+10, 12]
+            self.trajectory.angz = self.takeoff_traj[i:i+10, 13]
+            
+            print(self.trajectory.z)
+        
+        print("End of takeoff!")
+        
+
+    def land(self):
+        print("executing landing!")
+        
+        endTime = self.land_traj[-1,0]
+
+        startTime = time.time()
+        i = 0
+        self.trajectory.nav = 1
+        while(time.time() - startTime < endTime):
+            if(time.time() - startTime > self.land_traj[i,0]): 
+                if(i+10 >= self.land_traj.shape[0]): 
+                    continue
+                else:
+                    i +=1
+                
+            self.trajectory.x = self.land_traj[i:i+10, 1]
+            self.trajectory.y = self.land_traj[i:i+10, 2]
+            self.trajectory.z = self.land_traj[i:i+10, 3]
+            self.trajectory.qw = self.land_traj[i:i+10, 4]
+            self.trajectory.qx = self.land_traj[i:i+10, 5]
+            self.trajectory.qy = self.land_traj[i:i+10, 6]
+            self.trajectory.qz = self.land_traj[i:i+10, 7]
+            self.trajectory.vx = self.land_traj[i:i+10, 8]
+            self.trajectory.vy = self.land_traj[i:i+10, 9]
+            self.trajectory.vz = self.land_traj[i:i+10, 10]
+            self.trajectory.angx = self.land_traj[i:i+10, 11]
+            self.trajectory.angy = self.land_traj[i:i+10, 12]
+            self.trajectory.angz = self.land_traj[i:i+10, 13]
+            
+            print(self.trajectory.z)
+        
+        print("End of landing!")
+ 
 
     def console_input(self): 
         while not rospy.is_shutdown():
@@ -70,6 +143,7 @@ class Trajectory_Gen:
             user_input = input()
             #perform action based on command 
             self.inputDict.get(user_input, lambda: print("invalid input"))()
+            self.trajectory.nav = 0
 
     def publish_topics(self): 
         while not rospy.is_shutdown():
@@ -103,11 +177,12 @@ class Trajectory_Gen:
     
     def lemniscate(self):
         print("executing lemniscate!")
-
+        
         endTime = self.lemniscate_traj[-1,0]
 
         startTime = time.time()
         i = 0
+        self.trajectory.nav = 1
         while(time.time() - startTime < endTime):
             if(time.time() - startTime > self.lemniscate_traj[i,0]): 
                 if(i+10 >= self.lemniscate_traj.shape[0]): 
@@ -128,9 +203,16 @@ class Trajectory_Gen:
             self.trajectory.angx = self.lemniscate_traj[i:i+10, 11]
             self.trajectory.angy = self.lemniscate_traj[i:i+10, 12]
             self.trajectory.angz = self.lemniscate_traj[i:i+10, 13]
+            
             print(i)
         
         print("End of Lemniscate!")
+
+    def startTrajectory(self, ):
+        print("Starting trajectory!")
+        
+
+        self.trajectory.nav = 1
 
 
     def circle(self):
@@ -156,14 +238,11 @@ class Trajectory_Gen:
         print("stopping!")
         self.kill.killSwitch = 1
         
-        
 
-
-
-        
     def main(self): 
-        self.t1.start(); 
-        self.t2.start(); 
+        self.t1.start()
+        self.t2.start() 
+        self.t3.start()
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@
 /// Globals
 double pose[13] = {0,0,0,1,0,0,0,0,0,0,0,0,0};
 double mpcInputs[4] = {0,0,0,0};
+int nav = 0;
 
 /// Callbacks
 void poseSubscriberCallback(const heli_messages::Pose::ConstPtr& msg){
@@ -34,6 +35,7 @@ void MPCSubscriberCallback(const heli_messages::Inputs::ConstPtr& msg){
     mpcInputs[1] = msg->roll;
     mpcInputs[2] = msg->pitch;
     mpcInputs[3] = msg->yaw; 
+    nav = msg->nav;
 }
 
 
@@ -64,13 +66,21 @@ int main(int argc, char** argv){
         double now = ros::Time::now().toSec();
         double dt = now - startTime;
 
-        controller.updateController(pose, mpcInputs, dt);
-        L1Inputsmsg.col = controller.u[0];
-        L1Inputsmsg.roll = controller.u[1];
-        L1Inputsmsg.pitch = controller.u[2];
-        L1Inputsmsg.yaw = controller.u[3];
+        // if nav = 1 then execute L1 controller
+        if(nav){
+            controller.updateController(pose, mpcInputs, dt);
+            L1Inputsmsg.col = controller.u[0];
+            L1Inputsmsg.roll = controller.u[1];
+            L1Inputsmsg.pitch = controller.u[2];
+            L1Inputsmsg.yaw = controller.u[3];
 
-        inputsPublisher.publish(L1Inputsmsg);
+            inputsPublisher.publish(L1Inputsmsg);
+            std::cout<<"executing L1 controller"<<std::endl;           
+        }
+        else{ // else reinitialize controller
+            std::cout << "reinitializing controller" << std::endl;
+            controller.init(5,15);
+        }
 
         startTime = now;
         loopRate.sleep();

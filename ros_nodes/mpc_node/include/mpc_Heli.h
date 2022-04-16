@@ -58,6 +58,8 @@ private:
     acado_timer t;
     int status;
 
+    int nav;
+
     heli_messages::Inputs inputs;
 
     bool verbose;
