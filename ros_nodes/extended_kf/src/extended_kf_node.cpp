@@ -6,6 +6,7 @@
 #include "heli_messages/BNO.h"
 #include "geometry_msgs/TransformStamped.h"
 #include "../include/matlab/EKF.h"
+#include "geometry_msgs/TransformStamped"
 
 double imu[6]; 
 double vicon[7]; 
