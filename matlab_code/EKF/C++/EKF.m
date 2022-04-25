@@ -19,7 +19,7 @@ classdef EKF < handle
         function EKF = EKF(x0)
             %EKF Construct an instance of the EKF class
             EKF.P = eye(16); 
-            EKF.Q = diag([   0.2^2      0.2^2      0.2^2   0.04^2  0.04^2  0.04^2   0.06^2 0.06^2 0.06^2 0.06^2   0.000^2     0.000^2     0.000^2    0.000^2    0.000^2     0.000^2]);
+            EKF.Q = diag([   0.2^2      0.2^2      0.2^2   0.0^2  0.0^2  0.0^2   0.06^2 0.06^2 0.06^2 0.06^2   0.000^2     0.000^2     0.000^2    0.000^2    0.000^2     0.000^2]);
             %pos_x  pos_y  pos_z  vel_x  vel_y  vel_z  q0    q1    q2    q3  %b_ax  b_ay  b_az  b_wx  b_wy  b_wz
             EKF.R = diag([  0.0001^2    0.0001^2    0.0001^2    0.01^2     0.01^2     0.01^2    0.01^2]); 
             %pos_x  pos_y  pos_z  q0    q1    q2    q3
@@ -97,8 +97,8 @@ classdef EKF < handle
             b_x = x(11); b_y = x(12); b_z = x(13); %linear bias terms 
             b_wx = x(14); b_wy = x(15); b_wz = x(16); %angular bias terms 
             %imu estimates [xyz_accel pqr]
-            wx = imu(4)*(pi/180); wy = imu(5)*(pi/180); wz = imu(6)*(pi/180); 
-            ax = imu(1); ay = -imu(2); az = -imu(3); %% need to check this!!!!!!!!!!
+            wx = imu(4)*(pi/180); wy = -imu(5)*(pi/180); wz = -imu(6)*(pi/180); 
+            ax = imu(1); ay = -imu(2); az = -imu(3); %% need to check this!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
             %DCM body to inertial frame 
             T_bi = [ 1-2*(q2^2 + q3^2) 2*(q1*q2 - q0*q3) 2*(q1*q3 + q0*q2);

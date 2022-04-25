@@ -22,6 +22,7 @@ clc
 load('FT2.mat')
 load('flips_vicon.mat')
 load('angular_tf.mat')
+load('zTest.mat')
 
 %% ANGULAR System ID 
 %*********************
@@ -41,30 +42,31 @@ disp(print_r);
 %% LINEAR SYSTEM ID
 %********************
 %interpolate values to be used in system ID toolbox
-zt1 = interp1(FT2IMU{2:end,13}, FT2IMU{2:end,4}, FT2tar{2:end,2});
+zt1 = interp1(zTest1BNO(:,1), zTest1BNO(:,4), zTest1taranis(:,1));
+zt2 = interp1(zTest2BNO{:,1}, zTest2BNO{:,4}, zTest2taranis(:,1));
+
+for i = 1:length(zTest1taranis(:,7))
+    if zTest1taranis(i,7) >= 0
+       zTest1taranis(i,7) = -(zTest1taranis(i,7)+0.1)*44; 
+    else 
+        zTest1taranis(i,7) = -(zTest1taranis(i,7)+0.1)*30;
+    end
+end
+
+for i = 1:length(zTest2taranis(:,8))
+    if zTest2taranis(i,8) >= 0
+       zTest2taranis(i,8) = -(zTest2taranis(i,8)+0.065)*44; 
+    else 
+        zTest2taranis(i,8) = -(zTest2taranis(i,8)+0.065)*30;
+    end
+end
 
 %% PLOTTING 
-a = -1; 
-i=1; 
-input_z = zeros(1,length(FT2tar{2:end,2}));
-while i < length(FT2tar{2:end,2})
-    if FT2tar{1+i,5} > -0.74
-        input_z(i) = 0; 
-    else
-        if abs(FT2tar{1+i,5}) > 0.99
-            while abs(FT2tar{1+i,5}) > 0.99
-                input_z(i) = a*(FT2tar{1+i,5}+0.75);
-                i = i+1; 
-            end
-            a = -1*a; 
-        end
-        input_z(i) = a*(FT2tar{1+i,5}+0.75); 
-    end
-    i=i+1;
-end
 
 figure('name','z accleration')
 subplot(2,1,1) 
-plot(FT2tar{2:end,2},zt1,FT2tar{2:end,2},input_z*100)
-subplot(2,1,2)
-plot(FT2tar{2:end,2},FT2tar{2:end,5})
+plot(zTest1taranis(:,1), zTest1taranis(:,7), zTest1taranis(:,1),zt1)
+legend('z input', 'z accel')
+subplot(2,1,2) 
+plot(zTest2taranis(:,1), zTest2taranis(:,8), zTest2taranis(:,1),zt2)
+legend('z input', 'z accel')
