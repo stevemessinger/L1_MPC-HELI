@@ -47,19 +47,22 @@ zt2 = interp1(zTest2BNO{:,1}, zTest2BNO{:,4}, zTest2taranis(:,1));
 
 for i = 1:length(zTest1taranis(:,7))
     if zTest1taranis(i,7) >= 0
-       zTest1taranis(i,7) = -(zTest1taranis(i,7)+0.1)*44; 
+       zTest1taranis(i,7) = -(zTest1taranis(i,7)+0.0)*37.5 - 9.81; 
     else 
-        zTest1taranis(i,7) = -(zTest1taranis(i,7)+0.1)*30;
+        zTest1taranis(i,7) = -(zTest1taranis(i,7)+0.0)*37.5 - 9.81;
     end
 end
 
 for i = 1:length(zTest2taranis(:,8))
     if zTest2taranis(i,8) >= 0
-       zTest2taranis(i,8) = -(zTest2taranis(i,8)+0.065)*44; 
+       zTest2taranis(i,8) = -(zTest2taranis(i,8)+0.0)*37.5 -9.81; 
     else 
-        zTest2taranis(i,8) = -(zTest2taranis(i,8)+0.065)*30;
+        zTest2taranis(i,8) = -(zTest2taranis(i,8)+0.0)*37.5 -9.81;
     end
 end
+
+print_z = ['The z parameter is: K_z = ', num2str(37.5/9.80665)];
+disp(print_z);
 
 %% PLOTTING 
 
