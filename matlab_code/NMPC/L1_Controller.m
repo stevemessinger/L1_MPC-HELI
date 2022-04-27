@@ -60,7 +60,7 @@ classdef L1_Controller < handle
             T_mpc = L1_Controller.K_col*u_mpc(1);
             M_mpc = [(-1/L1_Controller.tau_p)*p+L1_Controller.K_phi*u_mpc(2);(-1/L1_Controller.tau_q)*q+L1_Controller.K_theta*u_mpc(3);(-1/L1_Controller.tau_r)*r+L1_Controller.K_psi*u_mpc(4)];
         
-            f = [[0;0;9.81]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
+            f = [[0;0;9.80665]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
             
             g = [e_zb zeros(3,3);zeros(3,1) eye(3)]; %uncertainty in matched component 
             g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 

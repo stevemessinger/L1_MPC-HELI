@@ -4,10 +4,9 @@
 // government, commercial, or other organizational use.
 // File: L1_Controller.h
 //
-// MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:54:34
+// MATLAB Coder version            : 5.1
+// C/C++ source code generated on  : 27-Apr-2022 11:15:15
 //
-
 #ifndef L1_CONTROLLER_H
 #define L1_CONTROLLER_H
 
@@ -17,8 +16,9 @@
 #include <cstdlib>
 
 // Type Definitions
-class L1_Controller {
-public:
+class L1_Controller
+{
+ public:
   L1_Controller *init(double adaptiveGain, double cutOffFrequency);
   void updateController(const double x[13], const double u_mpc[4], double dt);
   double u_L1[4];
@@ -29,7 +29,6 @@ public:
   double tau_p;
   double tau_q;
   double tau_r;
-  double m;
   double K_col;
   double K_phi;
   double K_theta;
@@ -37,6 +36,7 @@ public:
 };
 
 #endif
+
 //
 // File trailer for L1_Controller.h
 //

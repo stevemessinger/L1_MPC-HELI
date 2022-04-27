@@ -4,10 +4,9 @@
 // government, commercial, or other organizational use.
 // File: foo_terminate.h
 //
-// MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:54:34
+// MATLAB Coder version            : 5.1
+// C/C++ source code generated on  : 27-Apr-2022 11:15:15
 //
-
 #ifndef FOO_TERMINATE_H
 #define FOO_TERMINATE_H
 
@@ -20,6 +19,7 @@
 extern void foo_terminate();
 
 #endif
+
 //
 // File trailer for foo_terminate.h
 //

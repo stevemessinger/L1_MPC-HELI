@@ -2,8 +2,8 @@
 ## Makefile generated for component 'foo'. 
 ## 
 ## Makefile     : foo_rtw.mk
-## Generated on : Sat Apr 09 14:54:38 2022
-## Final product: .\foo.lib
+## Generated on : Wed Apr 27 11:15:27 2022
+## Final product: ./foo.a
 ## Product type : static-library
 ## 
 ###########################################################################
@@ -15,61 +15,48 @@
 # Macro Descriptions:
 # PRODUCT_NAME            Name of the system to build
 # MAKEFILE                Name of this makefile
-# COMPILER_COMMAND_FILE   Compiler command listing model reference header paths
-# CMD_FILE                Command file
 # MODELLIB                Static library target
 
 PRODUCT_NAME              = foo
 MAKEFILE                  = foo_rtw.mk
-MATLAB_ROOT               = W:\R2021b
-MATLAB_BIN                = W:\R2021b\bin
-MATLAB_ARCH_BIN           = $(MATLAB_BIN)\win64
-START_DIR                 = X:\NMPC_Heli\matlab_code\NMPC
-TGT_FCN_LIB               = ISO_C++11
+MATLAB_ROOT               = /Applications/MATLAB_R2020b.app
+MATLAB_BIN                = /Applications/MATLAB_R2020b.app/bin
+MATLAB_ARCH_BIN           = $(MATLAB_BIN)/maci64
+START_DIR                 = /Users/stevenmessinger/Documents/GitHub/L1_MPC-HELI/matlab_code/NMPC/codegen/lib/foo
+TGT_FCN_LIB               = ISO_C++
 SOLVER_OBJ                = 
 CLASSIC_INTERFACE         = 0
 MODEL_HAS_DYNAMICALLY_LOADED_SFCNS = 
-RELATIVE_PATH_TO_ANCHOR   = ..\..\..
-COMPILER_COMMAND_FILE     = foo_rtw_comp.rsp
-CMD_FILE                  = foo_rtw.rsp
-C_STANDARD_OPTS           = 
-CPP_STANDARD_OPTS         = 
-NODEBUG                   = 1
-MODELLIB                  = foo.lib
+RELATIVE_PATH_TO_ANCHOR   = .
+C_STANDARD_OPTS           = -fno-common -fexceptions
+CPP_STANDARD_OPTS         = -std=c++11 -fno-common -fexceptions
+MODELLIB                  = foo.a
 
 ###########################################################################
 ## TOOLCHAIN SPECIFICATIONS
 ###########################################################################
 
-# Toolchain Name:          Microsoft Visual C++ 2019 v16.0 | nmake (64-bit Windows)
-# Supported Version(s):    16.0
-# ToolchainInfo Version:   2021b
+# Toolchain Name:          Clang v3.1 | gmake (64-bit Mac)
+# Supported Version(s):    3.1
+# ToolchainInfo Version:   2020b
 # Specification Revision:  1.0
 # 
 #-------------------------------------------
 # Macros assumed to be defined elsewhere
 #-------------------------------------------
 
-# NODEBUG
-# cvarsdll
-# cvarsmt
-# conlibsmt
-# ldebug
-# conflags
-# cflags
+# C_STANDARD_OPTS
+# CPP_STANDARD_OPTS
 
 #-----------
 # MACROS
 #-----------
 
-MW_EXTERNLIB_DIR    = $(MATLAB_ROOT)\extern\lib\win64\microsoft
-MW_LIB_DIR          = $(MATLAB_ROOT)\lib\win64
-CPU                 = AMD64
-APPVER              = 5.02
-CVARSFLAG           = $(cvarsmt)
-CFLAGS_ADDITIONAL   = -D_CRT_SECURE_NO_WARNINGS
-CPPFLAGS_ADDITIONAL = -EHs -D_CRT_SECURE_NO_WARNINGS /wd4251
-LIBS_TOOLCHAIN      = $(conlibs)
+ARCHS             = x86_64
+XCODE_SDK_VER     = $(shell perl $(MATLAB_ROOT)/rtw/c/tools/macsdkver.pl)
+XCODE_SDK         = MacOSX$(XCODE_SDK_VER).sdk
+XCODE_DEVEL_DIR   = $(shell xcode-select -print-path)
+XCODE_SDK_ROOT    = $(XCODE_DEVEL_DIR)/Platforms/MacOSX.platform/Developer/SDKs/$(XCODE_SDK)
 
 TOOLCHAIN_SRCS = 
 TOOLCHAIN_INCS = 
@@ -79,24 +66,24 @@ TOOLCHAIN_LIBS =
 # BUILD TOOL COMMANDS
 #------------------------
 
-# C Compiler: Microsoft Visual C Compiler
-CC = cl
+# C Compiler: Clang C Compiler
+CC = xcrun clang
 
-# Linker: Microsoft Visual C Linker
-LD = link
+# Linker: Clang Linker
+LD = xcrun clang++
 
-# C++ Compiler: Microsoft Visual C++ Compiler
-CPP = cl
+# C++ Compiler: Clang C++ Compiler
+CPP = xcrun clang++
 
-# C++ Linker: Microsoft Visual C++ Linker
-CPP_LD = link
+# C++ Linker: Clang C++ Linker
+CPP_LD = xcrun clang++
 
-# Archiver: Microsoft Visual C/C++ Archiver
-AR = lib
+# Archiver: Clang Archiver
+AR = xcrun ar
 
 # MEX Tool: MEX Tool
 MEX_PATH = $(MATLAB_ARCH_BIN)
-MEX = "$(MEX_PATH)\mex"
+MEX = "$(MEX_PATH)/mex"
 
 # Download: Download
 DOWNLOAD =
@@ -104,52 +91,53 @@ DOWNLOAD =
 # Execute: Execute
 EXECUTE = $(PRODUCT)
 
-# Builder: NMAKE Utility
-MAKE = nmake
+# Builder: GMAKE Utility
+MAKE_PATH = %MATLAB%/bin/maci64
+MAKE = "$(MAKE_PATH)/gmake"
 
 
 #-------------------------
 # Directives/Utilities
 #-------------------------
 
-CDEBUG              = -Zi
-C_OUTPUT_FLAG       = -Fo
-LDDEBUG             = /DEBUG
-OUTPUT_FLAG         = -out:
-CPPDEBUG            = -Zi
-CPP_OUTPUT_FLAG     = -Fo
-CPPLDDEBUG          = /DEBUG
-OUTPUT_FLAG         = -out:
+CDEBUG              = -g
+C_OUTPUT_FLAG       = -o
+LDDEBUG             = -g
+OUTPUT_FLAG         = -o
+CPPDEBUG            = -g
+CPP_OUTPUT_FLAG     = -o
+CPPLDDEBUG          = -g
+OUTPUT_FLAG         = -o
 ARDEBUG             =
-STATICLIB_OUTPUT_FLAG = -out:
+STATICLIB_OUTPUT_FLAG =
 MEX_DEBUG           = -g
-RM                  = @del
+RM                  = @rm -f
 ECHO                = @echo
-MV                  = @ren
-RUN                 = @cmd /C
+MV                  = @mv
+RUN                 =
 
 #--------------------------------------
 # "Faster Runs" Build Configuration
 #--------------------------------------
 
-ARFLAGS              = /nologo
-CFLAGS               = $(cflags) $(CVARSFLAG) $(CFLAGS_ADDITIONAL) \
-                       /O2 /Oy-
-CPPFLAGS             = /TP $(cflags) $(CVARSFLAG) $(CPPFLAGS_ADDITIONAL) \
-                       /O2 /Oy-
-CPP_LDFLAGS          = $(ldebug) $(conflags) $(LIBS_TOOLCHAIN)
-CPP_SHAREDLIB_LDFLAGS  = $(ldebug) $(conflags) $(LIBS_TOOLCHAIN) \
-                         -dll -def:$(DEF_FILE)
+ARFLAGS              = ruvs
+CFLAGS               = -c -isysroot $(XCODE_SDK_ROOT) -arch $(ARCHS) $(C_STANDARD_OPTS) -mmacosx-version-min=10.14 \
+                       -O3
+CPPFLAGS             = -c -isysroot $(XCODE_SDK_ROOT) -arch $(ARCHS) $(CPP_STANDARD_OPTS) -mmacosx-version-min=10.14 \
+                       -O3
+CPP_LDFLAGS          = -arch $(ARCHS) -isysroot $(XCODE_SDK_ROOT) -Wl,-rpath,$(MATLAB_ARCH_BIN) -Wl,-rpath,@executable_path -Wl,-rpath,@executable_path/$(RELATIVE_PATH_TO_ANCHOR) -L"$(MATLAB_ARCH_BIN)"
+CPP_SHAREDLIB_LDFLAGS  = -dynamiclib -install_name @rpath/$(notdir $(PRODUCT)) -isysroot $(XCODE_SDK_ROOT) -L"$(MATLAB_ARCH_BIN)" \
+                         -Wl,$(LD_NAMESPACE) $(LD_UNDEFS)
 DOWNLOAD_FLAGS       =
 EXECUTE_FLAGS        =
-LDFLAGS              = $(ldebug) $(conflags) $(LIBS_TOOLCHAIN)
+LDFLAGS              = -arch $(ARCHS) -isysroot $(XCODE_SDK_ROOT) -Wl,-rpath,$(MATLAB_ARCH_BIN) -Wl,-rpath,@executable_path -Wl,-rpath,@executable_path/$(RELATIVE_PATH_TO_ANCHOR) -L"$(MATLAB_ARCH_BIN)"
 MEX_CPPFLAGS         =
 MEX_CPPLDFLAGS       =
 MEX_CFLAGS           =
 MEX_LDFLAGS          =
 MAKE_FLAGS           = -f $(MAKEFILE)
-SHAREDLIB_LDFLAGS    = $(ldebug) $(conflags) $(LIBS_TOOLCHAIN) \
-                       -dll -def:$(DEF_FILE)
+SHAREDLIB_LDFLAGS    = -dynamiclib -install_name @rpath/$(notdir $(PRODUCT)) -isysroot $(XCODE_SDK_ROOT) -L"$(MATLAB_ARCH_BIN)" \
+                       -Wl,$(LD_NAMESPACE) $(LD_UNDEFS)
 
 
 
@@ -157,7 +145,7 @@ SHAREDLIB_LDFLAGS    = $(ldebug) $(conflags) $(LIBS_TOOLCHAIN) \
 ## OUTPUT INFO
 ###########################################################################
 
-PRODUCT = .\foo.lib
+PRODUCT = ./foo.a
 PRODUCT_TYPE = "static-library"
 BUILD_TYPE = "Static Library"
 
@@ -165,7 +153,7 @@ BUILD_TYPE = "Static Library"
 ## INCLUDE PATHS
 ###########################################################################
 
-INCLUDES_BUILDINFO = 
+INCLUDES_BUILDINFO = -I$(START_DIR) -I/Users/stevenmessinger/Documents/GitHub/L1_MPC-HELI/matlab_code/NMPC -I$(MATLAB_ROOT)/extern/include
 
 INCLUDES = $(INCLUDES_BUILDINFO)
 
@@ -182,7 +170,7 @@ DEFINES = $(DEFINES_CUSTOM) $(DEFINES_STANDARD)
 ## SOURCE FILES
 ###########################################################################
 
-SRCS = $(START_DIR)\codegen\lib\foo\foo_data.cpp $(START_DIR)\codegen\lib\foo\rt_nonfinite.cpp $(START_DIR)\codegen\lib\foo\rtGetNaN.cpp $(START_DIR)\codegen\lib\foo\rtGetInf.cpp $(START_DIR)\codegen\lib\foo\foo_initialize.cpp $(START_DIR)\codegen\lib\foo\foo_terminate.cpp $(START_DIR)\codegen\lib\foo\foo.cpp $(START_DIR)\codegen\lib\foo\inv.cpp $(START_DIR)\codegen\lib\foo\expm.cpp $(START_DIR)\codegen\lib\foo\xzgetrf.cpp $(START_DIR)\codegen\lib\foo\L1_Controller.cpp
+SRCS = $(START_DIR)/foo_data.cpp $(START_DIR)/rt_nonfinite.cpp $(START_DIR)/rtGetNaN.cpp $(START_DIR)/rtGetInf.cpp $(START_DIR)/foo_initialize.cpp $(START_DIR)/foo_terminate.cpp $(START_DIR)/foo.cpp $(START_DIR)/inv.cpp $(START_DIR)/expm.cpp $(START_DIR)/xzgetrf.cpp $(START_DIR)/L1_Controller.cpp
 
 ALL_SRCS = $(SRCS)
 
@@ -190,7 +178,7 @@ ALL_SRCS = $(SRCS)
 ## OBJECTS
 ###########################################################################
 
-OBJS = foo_data.obj rt_nonfinite.obj rtGetNaN.obj rtGetInf.obj foo_initialize.obj foo_terminate.obj foo.obj inv.obj expm.obj xzgetrf.obj L1_Controller.obj
+OBJS = foo_data.o rt_nonfinite.o rtGetNaN.o rtGetInf.o foo_initialize.o foo_terminate.o foo.o inv.o expm.o xzgetrf.o L1_Controller.o
 
 ALL_OBJS = $(OBJS)
 
@@ -210,7 +198,7 @@ LIBS =
 ## SYSTEM LIBRARIES
 ###########################################################################
 
-SYSTEM_LIBS = 
+SYSTEM_LIBS =  -lm -lstdc++
 
 ###########################################################################
 ## ADDITIONAL TOOLCHAIN FLAGS
@@ -220,40 +208,34 @@ SYSTEM_LIBS =
 # C Compiler
 #---------------
 
-CFLAGS_ = /source-charset:utf-8
-CFLAGS_BASIC = $(DEFINES) @$(COMPILER_COMMAND_FILE)
+CFLAGS_BASIC = $(DEFINES) $(INCLUDES)
 
-CFLAGS = $(CFLAGS) $(CFLAGS_) $(CFLAGS_BASIC)
+CFLAGS += $(CFLAGS_BASIC)
 
 #-----------------
 # C++ Compiler
 #-----------------
 
-CPPFLAGS_ = /source-charset:utf-8
-CPPFLAGS_BASIC = $(DEFINES) @$(COMPILER_COMMAND_FILE)
+CPPFLAGS_BASIC = $(DEFINES) $(INCLUDES)
 
-CPPFLAGS = $(CPPFLAGS) $(CPPFLAGS_) $(CPPFLAGS_BASIC)
+CPPFLAGS += $(CPPFLAGS_BASIC)
 
 ###########################################################################
 ## INLINED COMMANDS
 ###########################################################################
 
-
-!include $(MATLAB_ROOT)\rtw\c\tools\vcdefs.mak
-
-
 ###########################################################################
 ## PHONY TARGETS
 ###########################################################################
 
-.PHONY : all build clean info prebuild download execute set_environment_variables
+.PHONY : all build clean info prebuild download execute
 
 
 all : build
-	@cmd /C "@echo ### Successfully generated all binary outputs."
+	@echo "### Successfully generated all binary outputs."
 
 
-build : set_environment_variables prebuild $(PRODUCT)
+build : prebuild $(PRODUCT)
 
 
 prebuild : 
@@ -265,11 +247,6 @@ download : $(PRODUCT)
 execute : download
 
 
-set_environment_variables : 
-	@set INCLUDE=$(INCLUDES);$(INCLUDE)
-	@set LIB=$(LIB)
-
-
 ###########################################################################
 ## FINAL TARGET
 ###########################################################################
@@ -279,9 +256,9 @@ set_environment_variables :
 #---------------------------------
 
 $(PRODUCT) : $(OBJS) $(PREBUILT_OBJS)
-	@cmd /C "@echo ### Creating static library "$(PRODUCT)" ..."
-	$(AR) $(ARFLAGS) -out:$(PRODUCT) @$(CMD_FILE)
-	@cmd /C "@echo ### Created: $(PRODUCT)"
+	@echo "### Creating static library "$(PRODUCT)" ..."
+	$(AR) $(ARFLAGS)  $(PRODUCT) $(OBJS)
+	@echo "### Created: $(PRODUCT)"
 
 
 ###########################################################################
@@ -292,87 +269,87 @@ $(PRODUCT) : $(OBJS) $(PREBUILT_OBJS)
 # SOURCE-TO-OBJECT
 #---------------------
 
-.c.obj :
-	$(CC) $(CFLAGS) -Fo"$@" "$<"
+%.o : %.c
+	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
-.cpp.obj :
-	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
+%.o : %.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-{$(RELATIVE_PATH_TO_ANCHOR)}.c.obj :
-	$(CC) $(CFLAGS) -Fo"$@" "$<"
+%.o : $(RELATIVE_PATH_TO_ANCHOR)/%.c
+	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
-{$(RELATIVE_PATH_TO_ANCHOR)}.cpp.obj :
-	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
+%.o : $(RELATIVE_PATH_TO_ANCHOR)/%.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-{$(START_DIR)\codegen\lib\foo}.c.obj :
-	$(CC) $(CFLAGS) -Fo"$@" "$<"
+%.o : $(START_DIR)/%.c
+	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
-{$(START_DIR)\codegen\lib\foo}.cpp.obj :
-	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
+%.o : $(START_DIR)/%.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-{$(START_DIR)}.c.obj :
-	$(CC) $(CFLAGS) -Fo"$@" "$<"
+%.o : /Users/stevenmessinger/Documents/GitHub/L1_MPC-HELI/matlab_code/NMPC/%.c
+	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
-{$(START_DIR)}.cpp.obj :
-	$(CPP) $(CPPFLAGS) -Fo"$@" "$<"
+%.o : /Users/stevenmessinger/Documents/GitHub/L1_MPC-HELI/matlab_code/NMPC/%.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-foo_data.obj : $(START_DIR)\codegen\lib\foo\foo_data.cpp
-	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\foo_data.cpp
+foo_data.o : $(START_DIR)/foo_data.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-rt_nonfinite.obj : $(START_DIR)\codegen\lib\foo\rt_nonfinite.cpp
-	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\rt_nonfinite.cpp
+rt_nonfinite.o : $(START_DIR)/rt_nonfinite.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-rtGetNaN.obj : $(START_DIR)\codegen\lib\foo\rtGetNaN.cpp
-	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\rtGetNaN.cpp
+rtGetNaN.o : $(START_DIR)/rtGetNaN.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-rtGetInf.obj : $(START_DIR)\codegen\lib\foo\rtGetInf.cpp
-	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\rtGetInf.cpp
+rtGetInf.o : $(START_DIR)/rtGetInf.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-foo_initialize.obj : $(START_DIR)\codegen\lib\foo\foo_initialize.cpp
-	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\foo_initialize.cpp
+foo_initialize.o : $(START_DIR)/foo_initialize.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-foo_terminate.obj : $(START_DIR)\codegen\lib\foo\foo_terminate.cpp
-	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\foo_terminate.cpp
+foo_terminate.o : $(START_DIR)/foo_terminate.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-foo.obj : $(START_DIR)\codegen\lib\foo\foo.cpp
-	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\foo.cpp
+foo.o : $(START_DIR)/foo.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-inv.obj : $(START_DIR)\codegen\lib\foo\inv.cpp
-	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\inv.cpp
+inv.o : $(START_DIR)/inv.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-expm.obj : $(START_DIR)\codegen\lib\foo\expm.cpp
-	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\expm.cpp
+expm.o : $(START_DIR)/expm.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-xzgetrf.obj : $(START_DIR)\codegen\lib\foo\xzgetrf.cpp
-	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\xzgetrf.cpp
+xzgetrf.o : $(START_DIR)/xzgetrf.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-L1_Controller.obj : $(START_DIR)\codegen\lib\foo\L1_Controller.cpp
-	$(CPP) $(CPPFLAGS) -Fo"$@" $(START_DIR)\codegen\lib\foo\L1_Controller.cpp
+L1_Controller.o : $(START_DIR)/L1_Controller.cpp
+	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
 ###########################################################################
 ## DEPENDENCIES
 ###########################################################################
 
-$(ALL_OBJS) : rtw_proj.tmw $(COMPILER_COMMAND_FILE) $(MAKEFILE)
+$(ALL_OBJS) : rtw_proj.tmw $(MAKEFILE)
 
 
 ###########################################################################
@@ -380,36 +357,36 @@ $(ALL_OBJS) : rtw_proj.tmw $(COMPILER_COMMAND_FILE) $(MAKEFILE)
 ###########################################################################
 
 info : 
-	@cmd /C "@echo ### PRODUCT = $(PRODUCT)"
-	@cmd /C "@echo ### PRODUCT_TYPE = $(PRODUCT_TYPE)"
-	@cmd /C "@echo ### BUILD_TYPE = $(BUILD_TYPE)"
-	@cmd /C "@echo ### INCLUDES = $(INCLUDES)"
-	@cmd /C "@echo ### DEFINES = $(DEFINES)"
-	@cmd /C "@echo ### ALL_SRCS = $(ALL_SRCS)"
-	@cmd /C "@echo ### ALL_OBJS = $(ALL_OBJS)"
-	@cmd /C "@echo ### LIBS = $(LIBS)"
-	@cmd /C "@echo ### MODELREF_LIBS = $(MODELREF_LIBS)"
-	@cmd /C "@echo ### SYSTEM_LIBS = $(SYSTEM_LIBS)"
-	@cmd /C "@echo ### TOOLCHAIN_LIBS = $(TOOLCHAIN_LIBS)"
-	@cmd /C "@echo ### CFLAGS = $(CFLAGS)"
-	@cmd /C "@echo ### LDFLAGS = $(LDFLAGS)"
-	@cmd /C "@echo ### SHAREDLIB_LDFLAGS = $(SHAREDLIB_LDFLAGS)"
-	@cmd /C "@echo ### CPPFLAGS = $(CPPFLAGS)"
-	@cmd /C "@echo ### CPP_LDFLAGS = $(CPP_LDFLAGS)"
-	@cmd /C "@echo ### CPP_SHAREDLIB_LDFLAGS = $(CPP_SHAREDLIB_LDFLAGS)"
-	@cmd /C "@echo ### ARFLAGS = $(ARFLAGS)"
-	@cmd /C "@echo ### MEX_CFLAGS = $(MEX_CFLAGS)"
-	@cmd /C "@echo ### MEX_CPPFLAGS = $(MEX_CPPFLAGS)"
-	@cmd /C "@echo ### MEX_LDFLAGS = $(MEX_LDFLAGS)"
-	@cmd /C "@echo ### MEX_CPPLDFLAGS = $(MEX_CPPLDFLAGS)"
-	@cmd /C "@echo ### DOWNLOAD_FLAGS = $(DOWNLOAD_FLAGS)"
-	@cmd /C "@echo ### EXECUTE_FLAGS = $(EXECUTE_FLAGS)"
-	@cmd /C "@echo ### MAKE_FLAGS = $(MAKE_FLAGS)"
+	@echo "### PRODUCT = $(PRODUCT)"
+	@echo "### PRODUCT_TYPE = $(PRODUCT_TYPE)"
+	@echo "### BUILD_TYPE = $(BUILD_TYPE)"
+	@echo "### INCLUDES = $(INCLUDES)"
+	@echo "### DEFINES = $(DEFINES)"
+	@echo "### ALL_SRCS = $(ALL_SRCS)"
+	@echo "### ALL_OBJS = $(ALL_OBJS)"
+	@echo "### LIBS = $(LIBS)"
+	@echo "### MODELREF_LIBS = $(MODELREF_LIBS)"
+	@echo "### SYSTEM_LIBS = $(SYSTEM_LIBS)"
+	@echo "### TOOLCHAIN_LIBS = $(TOOLCHAIN_LIBS)"
+	@echo "### CFLAGS = $(CFLAGS)"
+	@echo "### LDFLAGS = $(LDFLAGS)"
+	@echo "### SHAREDLIB_LDFLAGS = $(SHAREDLIB_LDFLAGS)"
+	@echo "### CPPFLAGS = $(CPPFLAGS)"
+	@echo "### CPP_LDFLAGS = $(CPP_LDFLAGS)"
+	@echo "### CPP_SHAREDLIB_LDFLAGS = $(CPP_SHAREDLIB_LDFLAGS)"
+	@echo "### ARFLAGS = $(ARFLAGS)"
+	@echo "### MEX_CFLAGS = $(MEX_CFLAGS)"
+	@echo "### MEX_CPPFLAGS = $(MEX_CPPFLAGS)"
+	@echo "### MEX_LDFLAGS = $(MEX_LDFLAGS)"
+	@echo "### MEX_CPPLDFLAGS = $(MEX_CPPLDFLAGS)"
+	@echo "### DOWNLOAD_FLAGS = $(DOWNLOAD_FLAGS)"
+	@echo "### EXECUTE_FLAGS = $(EXECUTE_FLAGS)"
+	@echo "### MAKE_FLAGS = $(MAKE_FLAGS)"
 
 
 clean : 
 	$(ECHO) "### Deleting all derived files..."
-	@if exist $(PRODUCT) $(RM) $(PRODUCT)
+	$(RM) $(PRODUCT)
 	$(RM) $(ALL_OBJS)
 	$(ECHO) "### Deleted all derived files."
 

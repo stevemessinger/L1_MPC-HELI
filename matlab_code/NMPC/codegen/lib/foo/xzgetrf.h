@@ -4,10 +4,9 @@
 // government, commercial, or other organizational use.
 // File: xzgetrf.h
 //
-// MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:54:34
+// MATLAB Coder version            : 5.1
+// C/C++ source code generated on  : 27-Apr-2022 11:15:15
 //
-
 #ifndef XZGETRF_H
 #define XZGETRF_H
 
@@ -17,16 +16,19 @@
 #include <cstdlib>
 
 // Function Declarations
-namespace coder {
-namespace internal {
-namespace reflapack {
-void xzgetrf(double A[36], int ipiv[6], int *info);
-
+namespace coder
+{
+  namespace internal
+  {
+    namespace reflapack
+    {
+      void xzgetrf(double A[36], int ipiv[6], int *info);
+    }
+  }
 }
-} // namespace internal
-} // namespace coder
 
 #endif
+
 //
 // File trailer for xzgetrf.h
 //

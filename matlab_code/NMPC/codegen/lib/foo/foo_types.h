@@ -4,17 +4,16 @@
 // government, commercial, or other organizational use.
 // File: foo_types.h
 //
-// MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:54:34
+// MATLAB Coder version            : 5.1
+// C/C++ source code generated on  : 27-Apr-2022 11:15:15
 //
-
 #ifndef FOO_TYPES_H
 #define FOO_TYPES_H
 
 // Include Files
 #include "rtwtypes.h"
-
 #endif
+
 //
 // File trailer for foo_types.h
 //

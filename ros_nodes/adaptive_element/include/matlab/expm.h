@@ -4,10 +4,9 @@
 // government, commercial, or other organizational use.
 // File: expm.h
 //
-// MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:54:34
+// MATLAB Coder version            : 5.1
+// C/C++ source code generated on  : 27-Apr-2022 11:15:15
 //
-
 #ifndef EXPM_H
 #define EXPM_H
 
@@ -17,12 +16,13 @@
 #include <cstdlib>
 
 // Function Declarations
-namespace coder {
-void expm(double A[36], double F[36]);
-
+namespace coder
+{
+  void expm(double A[36], double F[36]);
 }
 
 #endif
+
 //
 // File trailer for expm.h
 //

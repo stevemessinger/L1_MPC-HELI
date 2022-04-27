@@ -4,10 +4,9 @@
 // government, commercial, or other organizational use.
 // File: foo.h
 //
-// MATLAB Coder version            : 5.3
-// C/C++ source code generated on  : 09-Apr-2022 14:54:34
+// MATLAB Coder version            : 5.1
+// C/C++ source code generated on  : 27-Apr-2022 11:15:15
 //
-
 #ifndef FOO_H
 #define FOO_H
 
@@ -17,11 +16,12 @@
 #include <cstdlib>
 
 // Function Declarations
-extern void foo(const double x[13], const double u_mpc[4], double dt,
-                double adaptiveGain, double cutoffFrequency, double u[4],
-                double a[6], double *b, double u2[4], double a2[6], double *b2);
+extern void foo(const double x[13], const double u_mpc[4], double dt, double
+                adaptiveGain, double cutoffFrequency, double u[4], double a[6],
+                double *b, double u2[4], double a2[6], double *b2);
 
 #endif
+
 //
 // File trailer for foo.h
 //
