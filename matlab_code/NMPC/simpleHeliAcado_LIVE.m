@@ -19,10 +19,14 @@ BEGIN_ACADO;
     
     Control col roll pitch yaw;
     
-    tau = 0.05;
-    K = 1000/tau * pi/180;
-    mass = 1;
-    Kcol = 5*mass*9.81;
+    taup = 0.036889;
+    tauq = 0.06539;
+    taur = 0.083315;
+    Kp = 295.9283/taup * pi/180;
+    Kq = 299.1935/tauq * pi/180;
+    Kr = 667.8047/taur * pi/180;
+    mass = 0.342;
+    Kcol = 3.8239*9.80665; % Measured in g's
     
     Cbn = [(qw^2 + qx^2 - qy^2 - qz^2), 2*(qx*qy+qw*qz), 2*(qx*qz-qw*qy);
            2*(qx*qy-qw*qz), (qw^2 - qx^2 + qy^2 - qz^2), 2*(qy*qz+qw*qx);
@@ -35,12 +39,12 @@ BEGIN_ACADO;
     diffEQ.add(dot(qx) == 0.5 * (qw*p + qy*r - qz*q));
     diffEQ.add(dot(qy) == 0.5 * (qw*q - qx*r + qz*p));
     diffEQ.add(dot(qz) == 0.5 * (qw*r + qx*q - qy*p));
-    diffEQ.add(dot(xd) == 1/mass * Cbn(1,3) * (Kcol * col));
-    diffEQ.add(dot(yd) == 1/mass * Cbn(2,3) * (Kcol * col));
-    diffEQ.add(dot(zd) == 1/mass * Cbn(3,3) * (Kcol * col) + 9.81);
-    diffEQ.add(dot(p) == -1/tau * p + K*roll);
-    diffEQ.add(dot(q) == -1/tau * q + K*pitch);
-    diffEQ.add(dot(r) == -1/tau * r + K*yaw);
+    diffEQ.add(dot(xd) == Cbn(1,3) * (Kcol * col));
+    diffEQ.add(dot(yd) == Cbn(2,3) * (Kcol * col));
+    diffEQ.add(dot(zd) == Cbn(3,3) * (Kcol * col) + 9.80665);
+    diffEQ.add(dot(p) == -1/taup * p + Kp*roll);
+    diffEQ.add(dot(q) == -1/tauq * q + Kq*pitch);
+    diffEQ.add(dot(r) == -1/taur * r + Kr*yaw);
     
     %% OCP
     startTime = 0;
@@ -57,16 +61,15 @@ BEGIN_ACADO;
     Q(2,2) = 10;
     Q(3,3) = 10;
     Q(4,4) = 5;
-    
     Q(5,5) = 5;
     Q(6,6) = 5;
     Q(7,7) = 5;
     Q(8,8) = 1/20;
     Q(9,9) = 1/20;
     Q(10,10) = 1/20;
-    Q(11,11) = 1;
-    Q(12,12) = 1;
-    Q(13,13) = 1;
+    Q(11,11) = 1/20;
+    Q(12,12) = 1/20;
+    Q(13,13) = 1/20;
     
     ref = zeros(1,13); 
     ref(4) = 1;
@@ -141,10 +144,14 @@ endTime = floor(trajectory(end,1));
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
 f_dyn = 'heliDynamics';
-params.mass = 1; 
-params.tau = 0.05;
-params.Kcol = 5*params.mass*9.81;
-params.K = 1000/params.tau * pi/180;
+params.taup = 0.036889;
+params.tauq = 0.06539;
+params.taur = 0.083315;
+params.Kp = 295.9283/taup * pi/180;
+params.Kq = 299.1935/tauq * pi/180;
+params.Kr = 667.8047/taur * pi/180;
+params.mass = 0.342;
+params.Kcol = 3.8239*9.80665;
 
 %************************************
 %THIS GOES PRIOR TO SIMULATION 
@@ -157,16 +164,15 @@ A_s = -5*[1,0,0,0,0,0;
        0,0,0,1,0,0;
        0,0,0,0,1,0;
        0,0,0,0,0,1]; %adaption gains (Hurwitz)
-
-tau_c = 0.05; %first order z thrust response 
-tau_p = 0.05; %first order p response 
-tau_q = 0.05; %first order q response 
-tau_r = 0.05; %first order r response 
-m = 1; 
-K_col = (5*m)*9.81; 
-K_phi = (1000/tau_p)*(pi/180);
-K_theta = (1000/tau_q)*(pi/180);
-K_psi = (1000/tau_r)*(pi/180);
+ 
+tau_p = 0.036889; %first order p response 
+tau_q = 0.06539; %first order q response 
+tau_r = 0.083315; %first order r response 
+m = 0.342; 
+K_col = 3.8239*9.80665;
+K_phi = (295.9283/tau_p)*(pi/180);
+K_theta = (299.1935/tau_q)*(pi/180);
+K_psi = (667.8047/tau_r)*(pi/180);
 
 %initialize 
 u_L1 = zeros(4,length(t),2); %initialize adaptive element input 
@@ -225,7 +231,7 @@ for i = 1:2
         T_mpc = K_col*u_mpc(1,k,i)/m;
         M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2,k,i);(-1/tau_q)*q+K_theta*u_mpc(3,k,i);(-1/tau_r)*r+K_psi*u_mpc(4,k,i)];
     
-        f = [[0;0;9.81]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
+        f = [[0;0;9.80665]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
         
         g = [e_zb zeros(3,3);zeros(3,1) eye(3)]; %uncertainty in matched component 
         g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
@@ -265,7 +271,7 @@ end
 %% plotting
 % close all;
 vis.time = t(1:end-1);
-vis.signals.values = x(1:end-1,:,1);
+vis.signals.values = x(1:end-1,:,2);
 
 figure('name', 'position');
 subplot(3,1,1);
@@ -287,7 +293,8 @@ legend('MPC', 'L1+MPC', 'Reference');
 
 figure('name', '3d')
 hold on;
-plot3(x(:,1), x(:,2), x(:,3));
+plot3(x(:,1,1), x(:,2,1), x(:,3,1));
+plot3(x(:,1,2), x(:,2,2), x(:,3,2));
 plot3(x(1,1), x(1,2), x(1,3),'o')
 plot3(x(end,1), x(end,2), x(end,3), 'x');
 ylabel('E pos (m)');
@@ -295,21 +302,29 @@ xlabel('N pos(m)');
 zlabel('D pos (m)');
 legend('trajectory', 'start', 'end');
 
-euler = quat2eul(x(:,4:7), 'XYZ');
+euler1 = quat2eul(x(:,4:7,1), 'XYZ');
+euler2 = quat2eul(x(:,4:7,2), 'XYZ');
 eulerRef = quat2eul(trajectory(:,5:8), 'XYZ');
 figure('name', 'angle');
 subplot(3,1,1);
-plot(t, euler(:,1)*180/pi, trajectory(:,1), eulerRef(:,1)*180/pi);
+hold on
+plot(t, euler1(:,1)*180/pi, trajectory(:,1), eulerRef(:,1)*180/pi);
+plot(t, euler2(:,1)*180/pi, trajectory(:,1), eulerRef(:,1)*180/pi);
 ylabel('rol (deg)');
 
 subplot(3,1,2);
-plot(t, euler(:,2)*180/pi, trajectory(:,1), eulerRef(:,2)*180/pi);
+hold on
+plot(t, euler1(:,2)*180/pi, trajectory(:,1), eulerRef(:,2)*180/pi);
+plot(t, euler2(:,2)*180/pi, trajectory(:,1), eulerRef(:,2)*180/pi);
 ylabel('pitch (deg)');
 
 subplot(3,1,3);
-plot(t, euler(:,3)*180/pi, trajectory(:,1), eulerRef(:,3)*180/pi);
+hold on
+plot(t, euler1(:,3)*180/pi, trajectory(:,1), eulerRef(:,3)*180/pi);
+plot(t, euler2(:,3)*180/pi, trajectory(:,1), eulerRef(:,3)*180/pi);
 ylabel('yaw (deg)');
 xlabel('time (sec)');
+legend('MPC', 'L1+MPC', 'Reference');
 
 figure('name', 'quat')
 subplot(4,1,1)
@@ -347,9 +362,10 @@ ylabel('z vel (m/s)');
 legend('MPC', 'L1+MPC', 'Reference');
 
 subplot(4,1,4)
-plot(t, sqrt(x(:,8).* x(:,8) + x(:,9).* x(:,9) + x(:,10).* x(:,10)));
+plot(t, sqrt(x(:,8,1).* x(:,8,1) + x(:,9,1).* x(:,9,1) + x(:,10,1).* x(:,10,1)), t, sqrt(x(:,8,2).* x(:,8,2) + x(:,9,2).* x(:,9,2) + x(:,10,2).* x(:,10,2)));
 ylabel('total velocity (m/s)')
 xlabel('time (sec)');
+legend('MPC', 'L1+MPC');
 
 
 figure('name', 'rates')
@@ -447,7 +463,7 @@ ylabel('r')
 
 figure('name', 'position error');
 subplot(3,1,1);
-plot(t, abs(x(:,1,1)-trajectory(:,2)), t, abs(x(:,1,2)-trajectory(:,2)));
+plot(t, abs(x(:,1,2)-trajectory(:,2)), t, abs(x(:,2,2)-trajectory(:,2)));
 ylabel('x pos (m)');
 legend('MPC', 'L1+MPC');
 
