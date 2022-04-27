@@ -18,10 +18,7 @@ function xdot = heliDynamics(state, u, t, params, dt)
     col = min(max(u(1),-1),1);
     roll = min(max(u(2),-1),1);
     pitch = min(max(u(3),-1),1);
-    yaw = min(max(u(4),-1),1);
-    
-    
-
+    yaw = min(max(u(4),-1),1);   
     
     Cbn = [(qw^2 + qx^2 - qy^2 - qz^2), 2*(qx*qy+qw*qz), 2*(qx*qz-qw*qy);
            2*(qx*qy-qw*qz), (qw^2 - qx^2 + qy^2 - qz^2), 2*(qy*qz+qw*qx);
@@ -34,11 +31,11 @@ function xdot = heliDynamics(state, u, t, params, dt)
     xdot(5) = 0.5 * (qw*p + qy*r - qz*q);
     xdot(6) = 0.5 * (qw*q - qx*r + qz*p);
     xdot(7) = 0.5 * (qw*r + qx*q - qy*p);
-    xdot(8) = 1/params.mass * Cbn(1,3) * params.Kcol * col;
-    xdot(9) = 1/params.mass * Cbn(2,3) * params.Kcol * col;
-    xdot(10) = 1/params.mass * Cbn(3,3) * params.Kcol * col*0.6 + 9.81;
-    xdot(11) = -1/params.tau * p + params.K*roll*0.6;
-    xdot(12) = -1/params.tau * q + params.K*pitch*0.6;
-    xdot(13) = -1/params.tau * r + params.K*yaw*0.6;
+    xdot(8) = Cbn(1,3) * params.Kcol * col;
+    xdot(9) = Cbn(2,3) * params.Kcol * col;
+    xdot(10) = Cbn(3,3) * params.Kcol * col + 9.81;
+    xdot(11) = -1/params.taup * p + params.Kp*roll;
+    xdot(12) = -1/params.tauq * q + params.Kq*pitch;
+    xdot(13) = -1/params.taur * r + params.Kr*yaw;
 
 end

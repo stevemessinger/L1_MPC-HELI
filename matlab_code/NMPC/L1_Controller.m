@@ -33,10 +33,10 @@ classdef L1_Controller < handle
                                  0,0,0,0,0,1]; %adaption gains (Hurwitz)
 
 
-            L1_Controller.K_col = (5*L1_Controller.m)*9.81; 
+            L1_Controller.K_col = 3.8239*9.80665; 
             L1_Controller.K_phi = (295.9283/L1_Controller.tau_p)*(pi/180);
-            L1_Controller.K_theta = (-299.1935/L1_Controller.tau_q)*(pi/180);
-            L1_Controller.K_psi = (-667.8047/L1_Controller.tau_r)*(pi/180);
+            L1_Controller.K_theta = (299.1935/L1_Controller.tau_q)*(pi/180);
+            L1_Controller.K_psi = (667.8047/L1_Controller.tau_r)*(pi/180);
         end
 
 
@@ -57,7 +57,7 @@ classdef L1_Controller < handle
         
             z = [v_n v_e v_d p q r]'; %state vector 
         
-            T_mpc = L1_Controller.K_col*u_mpc(1)/L1_Controller.m;
+            T_mpc = L1_Controller.K_col*u_mpc(1);
             M_mpc = [(-1/L1_Controller.tau_p)*p+L1_Controller.K_phi*u_mpc(2);(-1/L1_Controller.tau_q)*q+L1_Controller.K_theta*u_mpc(3);(-1/L1_Controller.tau_r)*r+L1_Controller.K_psi*u_mpc(4)];
         
             f = [[0;0;9.81]+T_mpc.*e_zb;M_mpc]; %desired dynamics 

@@ -228,7 +228,7 @@ for i = 1:2
     
         z(:,k,i) = [v_n v_e v_d p q r]'; %state vector 
     
-        T_mpc = K_col*u_mpc(1,k,i)/m;
+        T_mpc = K_col*u_mpc(1,k,i);
         M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2,k,i);(-1/tau_q)*q+K_theta*u_mpc(3,k,i);(-1/tau_r)*r+K_psi*u_mpc(4,k,i)];
     
         f = [[0;0;9.80665]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
