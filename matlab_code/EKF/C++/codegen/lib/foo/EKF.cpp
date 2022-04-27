@@ -5,7 +5,7 @@
 // File: EKF.cpp
 //
 // MATLAB Coder version            : 5.1
-// C/C++ source code generated on  : 21-Mar-2022 13:01:25
+// C/C++ source code generated on  : 27-Apr-2022 13:20:00
 //
 
 // Include Files
@@ -42,6 +42,7 @@ void EKF::derivative(const double x[16], const double imu[6], double xdot[16])
   // linear bias terms
   // angular bias terms
   // imu estimates [xyz_accel pqr]
+  //  this depends how the IMU is mounted!
   // DCM body to inertial frame
   xdot[0] = x[3];
   xdot[1] = x[4];
@@ -64,22 +65,22 @@ void EKF::derivative(const double x[16], const double imu[6], double xdot[16])
   dv[5] = imu_idx_0;
   dv[8] = 1.0 - 2.0 * (imu_idx_2 + imu_idx_1);
   imu_idx_0 = imu[0] - x[10];
-  imu_idx_1 = imu[1] - x[11];
-  imu_idx_2 = imu[2] - x[12];
+  imu_idx_1 = -imu[1] - x[11];
+  imu_idx_2 = -imu[2] - x[12];
   for (i = 0; i < 3; i++) {
     xdot[i + 3] = (dv[i] * imu_idx_0 + dv[i + 3] * imu_idx_1) + dv[i + 6] *
       imu_idx_2;
   }
 
-  //  - [0;0;9.81]; % linear accelerations
+  //  + [0;0;9.81]; % linear accelerations
   dv1[0] = 0.0;
   imu_idx_0 = imu[3] * 0.017453292519943295 - x[13];
   imu_idx_1 = 0.5 * -imu_idx_0;
   dv1[4] = imu_idx_1;
-  imu_idx_2 = imu[4] * 0.017453292519943295 - x[14];
+  imu_idx_2 = -imu[4] * 0.017453292519943295 - x[14];
   x_idx_3 = 0.5 * -imu_idx_2;
   dv1[8] = x_idx_3;
-  d = imu[5] * 0.017453292519943295 - x[15];
+  d = -imu[5] * 0.017453292519943295 - x[15];
   d1 = 0.5 * -d;
   dv1[12] = d1;
   imu_idx_0 *= 0.5;
@@ -220,6 +221,9 @@ void EKF::calc_estimate(const double y[7], const double imu[6], double dt)
   double q2;
   double q3;
   double q_A_tmp;
+  double wx;
+  double wy;
+  double wz;
 
   //  asign temp variables
   q0 = this->x_hat[6];
@@ -231,6 +235,11 @@ void EKF::calc_estimate(const double y[7], const double imu[6], double dt)
   b_wz = this->x_hat[15];
 
   // imu estimates [xyz_accel pqr]
+  wx = imu[3] * 0.017453292519943295;
+  wy = -imu[4] * 0.017453292519943295;
+  wz = -imu[5] * 0.017453292519943295;
+
+  //  this depends how the IMU is mounted!
   //  calculate A matrix
   A[3] = 0.0;
   A[19] = 0.0;
@@ -238,8 +247,8 @@ void EKF::calc_estimate(const double y[7], const double imu[6], double dt)
   A[51] = 0.0;
   A[67] = 0.0;
   A[83] = 0.0;
-  A_tmp = imu[1] - this->x_hat[11];
-  b_A_tmp = imu[2] - this->x_hat[12];
+  A_tmp = -imu[1] - this->x_hat[11];
+  b_A_tmp = -imu[2] - this->x_hat[12];
   c_A_tmp = 2.0 * q2 * b_A_tmp;
   A[99] = -2.0 * q3 * A_tmp + c_A_tmp;
   d_A_tmp = 2.0 * q3 * b_A_tmp;
@@ -307,11 +316,11 @@ void EKF::calc_estimate(const double y[7], const double imu[6], double dt)
   A[70] = 0.0;
   A[86] = 0.0;
   A[102] = 0.0;
-  A_tmp = 0.5 * (-imu[3] + b_wx);
+  A_tmp = 0.5 * (-wx + b_wx);
   A[118] = A_tmp;
-  b_A_tmp = 0.5 * (-imu[4] + b_wy);
+  b_A_tmp = 0.5 * (-wy + b_wy);
   A[134] = b_A_tmp;
-  c_A_tmp = 0.5 * (-imu[5] + b_wz);
+  c_A_tmp = 0.5 * (-wz + b_wz);
   A[150] = c_A_tmp;
   A[166] = 0.0;
   A[182] = 0.0;
@@ -325,10 +334,10 @@ void EKF::calc_estimate(const double y[7], const double imu[6], double dt)
   A[55] = 0.0;
   A[71] = 0.0;
   A[87] = 0.0;
-  d_A_tmp = 0.5 * (imu[3] - b_wx);
+  d_A_tmp = 0.5 * (wx - b_wx);
   A[103] = d_A_tmp;
   A[119] = 0.0;
-  e_A_tmp = 0.5 * (imu[5] - b_wz);
+  e_A_tmp = 0.5 * (wz - b_wz);
   A[135] = e_A_tmp;
   A[151] = b_A_tmp;
   A[167] = 0.0;
@@ -343,7 +352,7 @@ void EKF::calc_estimate(const double y[7], const double imu[6], double dt)
   A[56] = 0.0;
   A[72] = 0.0;
   A[88] = 0.0;
-  b_A_tmp = 0.5 * (imu[4] - b_wy);
+  b_A_tmp = 0.5 * (wy - b_wy);
   A[104] = b_A_tmp;
   A[120] = c_A_tmp;
   A[136] = 0.0;
@@ -694,12 +703,13 @@ void EKF::calc_estimate(const double y[7], const double imu[6], double dt)
 //
 EKF *EKF::init(const double x0[16])
 {
-  static const double dv[16] = { 0.040000000000000008, 0.040000000000000008,
-    0.040000000000000008, 0.0016, 0.0016, 0.0016, 0.0036, 0.0036, 0.0036, 0.0036,
-    0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+  static const double dv[16] = { 0.0, 0.0, 0.0, 0.00036296, 0.00036296,
+    0.00036296, 0.00024609142453120044, 0.00024609142453120044,
+    0.00024609142453120044, 0.00024609142453120044, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+  };
 
-  static const double dv1[7] = { 1.0E-8, 1.0E-8, 1.0E-8, 0.0001, 0.0001, 0.0001,
-    0.0001 };
+  static const double dv1[7] = { 1.0E-8, 1.0E-8, 1.0E-8, 1.0E-6, 1.0E-6, 1.0E-6,
+    1.0E-6 };
 
   EKF *b_EKF;
   double b_I[256];

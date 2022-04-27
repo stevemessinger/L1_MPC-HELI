@@ -2,7 +2,7 @@
 ## Makefile generated for component 'foo'. 
 ## 
 ## Makefile     : foo_rtw.mk
-## Generated on : Mon Mar 21 13:01:37 2022
+## Generated on : Wed Apr 27 13:20:10 2022
 ## Final product: ./foo.a
 ## Product type : static-library
 ## 

@@ -5,7 +5,7 @@
 // File: foo_data.h
 //
 // MATLAB Coder version            : 5.1
-// C/C++ source code generated on  : 21-Mar-2022 13:01:25
+// C/C++ source code generated on  : 27-Apr-2022 13:20:00
 //
 #ifndef FOO_DATA_H
 #define FOO_DATA_H

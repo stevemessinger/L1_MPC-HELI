@@ -143,18 +143,24 @@ end
 figure(111) 
 subplot(3,2,1)
 plot(time, vicon(:,1), time, x_hat(:,1))
+hold on 
+plot(time, x_hat(:,4)); 
 ylabel('$N_{pos}$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
 grid
 subplot(3,2,3)
 plot(time, vicon(:,2), time, x_hat(:,2))
+hold on 
+plot(time, x_hat(:,5));
 ylabel('$E_{pos}$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
 grid
 subplot(3,2,5)
 plot(time, vicon(:,3), time, x_hat(:,3))
+hold on 
+plot(time, x_hat(:,6));
 ylabel('$D_{pos}$','interpreter','latex')
 xlabel('time (s)')
 legend('vicon','$\hat{x}$','interpreter','latex')
