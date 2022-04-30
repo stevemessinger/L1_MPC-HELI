@@ -75,10 +75,10 @@ int main(int argc, char** argv){
             L1Inputsmsg.yaw = controller.u[3];
 
             inputsPublisher.publish(L1Inputsmsg);
-            std::cout<<"executing L1 controller"<<std::endl;           
+            //std::cout<<"executing L1 controller"<<std::endl;           
         }
         else{ // else reinitialize controller
-            std::cout << "reinitializing controller" << std::endl;
+            //std::cout << "reinitializing controller" << std::endl;
             controller.init(5,15);
         }
 

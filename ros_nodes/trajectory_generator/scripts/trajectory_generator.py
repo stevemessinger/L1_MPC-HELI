@@ -46,9 +46,9 @@ class Trajectory_Gen:
         }
 
         # load in all the files
-        self.land_traj = np.loadtxt('/home/ros/Documents/catkin_ws/src/L1_MPC_HEli/ros_nodes/trajectory_generator/src/Land.txt', delimiter='\t', skiprows=1)
-        self.takeoff_traj = np.loadtxt('/home/ros/Documents/catkin_ws/src/L1_MPC_HEli/ros_nodes/trajectory_generator/src/Takeoff.txt', delimiter='\t', skiprows=1)
-        self.lemniscate_traj = np.loadtxt('/home/ros/Documents/catkin_ws/src/L1_MPC_HEli/ros_nodes/trajectory_generator/src/lemniscate.txt', delimiter='\t', skiprows=1)
+        self.land_traj = np.loadtxt('/home/ros/catkin_ws/src/L1_MPC-HELI/ros_nodes/trajectory_generator/src/Land.txt', delimiter='\t', skiprows=1)
+        self.takeoff_traj = np.loadtxt('/home/ros/catkin_ws/src/L1_MPC-HELI/ros_nodes/trajectory_generator/src/Takeoff.txt', delimiter='\t', skiprows=1)
+        self.lemniscate_traj = np.loadtxt('/home/ros/catkin_ws/src/L1_MPC-HELI/ros_nodes/trajectory_generator/src/lemniscate.txt', delimiter='\t', skiprows=1)
         #self.circle_traj = np.loadtxt('../include/circle.csv', delimiter=',', skiprows=1)
         #self.melon_traj = np.loadtxt('../include/melon.csv', delimiter=',', skiprows=1)
     
@@ -97,7 +97,7 @@ class Trajectory_Gen:
             self.trajectory.angy = self.takeoff_traj[i:i+10, 12]
             self.trajectory.angz = self.takeoff_traj[i:i+10, 13]
             
-            print(self.trajectory.z)
+            print(i)
         
         print("End of takeoff!")
         
@@ -131,7 +131,9 @@ class Trajectory_Gen:
             self.trajectory.angy = self.land_traj[i:i+10, 12]
             self.trajectory.angz = self.land_traj[i:i+10, 13]
             
-            print(self.trajectory.z)
+            print(i)
+        
+        self.trajectory.nav = 0
         
         print("End of landing!")
  
@@ -143,7 +145,6 @@ class Trajectory_Gen:
             user_input = input()
             #perform action based on command 
             self.inputDict.get(user_input, lambda: print("invalid input"))()
-            self.trajectory.nav = 0
 
     def publish_topics(self): 
         while not rospy.is_shutdown():
