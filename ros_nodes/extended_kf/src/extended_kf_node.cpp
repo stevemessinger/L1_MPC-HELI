@@ -24,12 +24,12 @@ void imuCallback(const heli_messages::BNO::ConstPtr& imuMessage)
 void viconCallback(const geometry_msgs::TransformStamped::ConstPtr& viconMessage)
 {
     vicon[0] = viconMessage->transform.translation.x; 
-    vicon[1] = viconMessage->transform.translation.y;
-    vicon[2] = viconMessage->transform.translation.z;
+    vicon[1] = -viconMessage->transform.translation.y;
+    vicon[2] = -viconMessage->transform.translation.z;
     vicon[3] = viconMessage->transform.rotation.w; 
     vicon[4] = viconMessage->transform.rotation.x; 
-    vicon[5] = viconMessage->transform.rotation.y; 
-    vicon[6] = viconMessage->transform.rotation.z; 
+    vicon[5] = -viconMessage->transform.rotation.y; 
+    vicon[6] = -viconMessage->transform.rotation.z; 
 }
 
 int main (int argc, char **argv)
@@ -80,8 +80,8 @@ int main (int argc, char **argv)
         poseMessage.qy = EKF_ros.x_hat[8];
         poseMessage.qz = EKF_ros.x_hat[9]; 
         poseMessage.angx = imu[3];
-        poseMessage.angy = imu[4];
-        poseMessage.angz = imu[5]; 
+        poseMessage.angy = -imu[4];
+        poseMessage.angz = -imu[5]; 
 
         posePublisher.publish(poseMessage);
 
