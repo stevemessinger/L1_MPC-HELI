@@ -139,7 +139,7 @@ trajectory(:,13) = -data(:,6);
 trajectory(:,14) = -data(:,7);
 
 
-dt=0.002; % time step
+dt=0.01; % time step
 endTime = floor(trajectory(end,1));
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
