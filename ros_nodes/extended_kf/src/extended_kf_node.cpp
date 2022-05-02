@@ -6,6 +6,7 @@
 #include "heli_messages/BNO.h"
 #include "geometry_msgs/TransformStamped.h"
 #include "../include/matlab/EKF.h"
+#include <cmath>
 
 double imu[6]; 
 double vicon[7]; 
@@ -79,9 +80,9 @@ int main (int argc, char **argv)
         poseMessage.qx = EKF_ros.x_hat[7];
         poseMessage.qy = EKF_ros.x_hat[8];
         poseMessage.qz = EKF_ros.x_hat[9]; 
-        poseMessage.angx = imu[3];
-        poseMessage.angy = -imu[4];
-        poseMessage.angz = -imu[5]; 
+        poseMessage.angx = imu[3] * M_PI/180;
+        poseMessage.angy = -imu[4]* M_PI/180;
+        poseMessage.angz = -imu[5]* M_PI/180; 
 
         posePublisher.publish(poseMessage);
 
