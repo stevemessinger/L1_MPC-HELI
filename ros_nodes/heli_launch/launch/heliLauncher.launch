@@ -1,7 +1,9 @@
 <launch>
     <node pkg="espcomm" type="espcomm_node.py" name="espcomm" output="screen"/>
+    <node pkg="espcomm" type="taranis_node.py" name="taranis" output="screen"/>
     <node pkg="trajectory_generator" type="trajectory_generator.py" name="trajectory_generator" output="screen"/>
     <node pkg="extended_kf" type="extended_kf" name="extended_kf" output="screen"/>
     <node pkg="mpc_node" type="mpc_node" name="mpc_node" output="screen"/>
     <node pkg="adaptive_element" type="adaptive_element" name="adaptive_element" output="screen"/>
+    
 </launch>
