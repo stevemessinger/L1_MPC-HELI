@@ -22,7 +22,7 @@ def inputCallback(msg):
     col = int(numpy.interp(max(-1, min(msg.col,1)), [-1, 1], [172, 1811]))
 
     command = str(roll) + ":" + str(pitch) + ":" + str(throttle) + ":" + str(yaw) + ":" + str(col)
-    #print(command)
+    print(command)
     return
 
 def publishBNOData():
