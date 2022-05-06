@@ -11,22 +11,22 @@ Simulation enviornment is created in MATLAB and requires the ACADO Matlab Interf
 1: Download the acado toolkit from: https://github.com/acado/acado
 
 2: Open the MATLAB editor and in the command window:
-''''bash
+````bash
 mex -setup;
-''''
+````
 If matlab returns:
-''''bash
+````bash
 Please choose your compiler for building external interface (MEX) files:
 Would you like mex to locate installed compilers [y]/n?
-''''
+````
 type "y" and hit enter
 
 3: In the Matlab command window, navigate to the interfaces/matlab/ folder in the acado toolkit download.
 
 4:
-''''bash
+````bash
 make clean all;
-''''
+````
 
 ACADO for matlab will now build
 
