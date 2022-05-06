@@ -52,7 +52,7 @@ def publishBNOData():
 
         pub.publish(msg)
         end = timer()
-        print(end-start)
+        #print(end-start)
         rate.sleep()
     return
 

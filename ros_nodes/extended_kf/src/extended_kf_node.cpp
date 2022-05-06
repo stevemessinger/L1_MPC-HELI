@@ -67,7 +67,7 @@ int main (int argc, char **argv)
         dt = currentTime - pastTime; 
         pastTime = currentTime;
 
-        std::cout << dt <<std::endl; 
+        //std::cout << dt <<std::endl; 
 
         //calculate state estimation 
         heli_messages::Pose poseMessage;
