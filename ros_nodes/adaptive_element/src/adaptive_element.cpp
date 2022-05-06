@@ -2,9 +2,9 @@
 
 adaptiveElement::adaptiveElement(){
 
-    poseSubscriber = nh.subscribe("pose",  500, &adaptiveElement::poseSubscriberCallback, this);
-    MPCSubscriber = nh.subscribe("mpc_input", 500, &adaptiveElement::MPCSubscriberCallback, this);
-    inputsPublisher = nh.advertise<heli_messages::Inputs>("L1_inputs", 500);
+    poseSubscriber = nh.subscribe("pose",  10, &adaptiveElement::poseSubscriberCallback, this);
+    MPCSubscriber = nh.subscribe("mpc_input", 10, &adaptiveElement::MPCSubscriberCallback, this);
+    inputsPublisher = nh.advertise<heli_messages::Inputs>("L1_inputs", 10);
 
     z_State = Eigen::VectorXd(6);
     g = {0, 0, 9.81};

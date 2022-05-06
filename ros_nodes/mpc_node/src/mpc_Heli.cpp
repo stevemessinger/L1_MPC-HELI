@@ -6,9 +6,9 @@ ACADOworkspace acadoWorkspace;
 mpcController::mpcController(){
     verbose == false;
 
-    poseSubscriber = nh.subscribe("pose", 500, &mpcController::poseCallback, this);
-    trajSubscriber = nh.subscribe("trajectory", 500, &mpcController::trajectoryCallback, this);
-    inputPublisher = nh.advertise<heli_messages::Inputs>("mpc_input", 500);
+    poseSubscriber = nh.subscribe("pose", 1, &mpcController::poseCallback, this);
+    trajSubscriber = nh.subscribe("trajectory", 1, &mpcController::trajectoryCallback, this);
+    inputPublisher = nh.advertise<heli_messages::Inputs>("mpc_input", 1);
 
 
     if(!this->init()){
@@ -23,9 +23,9 @@ mpcController::mpcController(){
 mpcController::mpcController(bool vrbs){
     verbose = vrbs;
 
-    poseSubscriber = nh.subscribe("pose", 500, &mpcController::poseCallback, this);
-    trajSubscriber = nh.subscribe("trajectory", 500, &mpcController::trajectoryCallback, this);
-    inputPublisher = nh.advertise<heli_messages::Inputs>("mpc_input", 500);
+    poseSubscriber = nh.subscribe("pose", 1, &mpcController::poseCallback, this);
+    trajSubscriber = nh.subscribe("trajectory", 1, &mpcController::trajectoryCallback, this);
+    inputPublisher = nh.advertise<heli_messages::Inputs>("mpc_input", 1);
 
 
     if(!this->init()){
@@ -80,7 +80,6 @@ bool mpcController::init(){
 
 
 int mpcController::loop(){
-
     if(nav){
         /* Perform the feedback step. */
         //for (i = 0; i < NX; i++) acadoVariables.x0[i] = acadoVariables.x[NX + i]; //assume it moved that state
@@ -112,7 +111,6 @@ int mpcController::loop(){
         inputs.nav = nav;
         inputPublisher.publish(inputs);
     }
-
     
     return status;
 }

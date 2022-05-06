@@ -28,9 +28,9 @@ class Trajectory_Gen:
         #ROS initializations
         rospy.init_node('traj_gen', anonymous=True)
         self.rate = rospy.Rate(500)
-        self.sticksPublisher = rospy.Publisher('L1_inputs', Inputs, queue_size=10)
-        self.trajPublisher = rospy.Publisher("trajectory", Trajectory, queue_size=10)
-        self.killSwitchPublisher = rospy.Publisher("killSwitch", KillSwitch, queue_size=10)
+        self.sticksPublisher = rospy.Publisher('L1_inputs', Inputs, queue_size=1)
+        self.trajPublisher = rospy.Publisher("trajectory", Trajectory, queue_size=1)
+        self.killSwitchPublisher = rospy.Publisher("killSwitch", KillSwitch, queue_size=1)
         # make dictionary of possible user inputs and set the entries to the respective functions
         self.inputDict = {
             "exit": self.initialize_input,

@@ -40,11 +40,11 @@ int main (int argc, char **argv)
 
     ROS_INFO("EKF Node Initialized!");
 
-    ros::Subscriber imuSubscriber = nh.subscribe("BNOData", 1000, imuCallback);
-    ros::Subscriber viconSubscriber = nh.subscribe("/vicon/Explorer_M2/Explorer_M2", 1000, viconCallback);
+    ros::Subscriber imuSubscriber = nh.subscribe("BNOData", 1, imuCallback);
+    ros::Subscriber viconSubscriber = nh.subscribe("/vicon/Explorer_M2/Explorer_M2", 1, viconCallback);
     ros::Publisher posePublisher;
 
-    posePublisher = nh.advertise<heli_messages::Pose>("pose", 1000);
+    posePublisher = nh.advertise<heli_messages::Pose>("pose", 1);
 
     double x0[16]; 
     x0[0]=0; x0[1]=0; x0[2]=0; x0[3]=0; x0[4]=0; x0[5]=0; x0[6]=1; x0[7]=0;
@@ -65,6 +65,10 @@ int main (int argc, char **argv)
     {
         currentTime = ros::Time::now().toSec(); 
         dt = currentTime - pastTime; 
+        pastTime = currentTime;
+
+        std::cout << dt <<std::endl; 
+
         //calculate state estimation 
         heli_messages::Pose poseMessage;
 
@@ -85,8 +89,6 @@ int main (int argc, char **argv)
         poseMessage.angz = -imu[5]* M_PI/180; 
 
         posePublisher.publish(poseMessage);
-
-        pastTime = currentTime; 
 
         ros::spinOnce(); 
         loop_rate.sleep();               

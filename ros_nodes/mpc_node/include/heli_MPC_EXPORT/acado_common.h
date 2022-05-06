@@ -240,14 +240,7 @@ int acado_integrate( real_t* const rk_eta, int resetIntegrator );
  *  \param in Input to the exported function.
  *  \param out Output of the exported function.
  */
-void acado_rhs(const real_t* in, real_t* out);
-
-/** Export of an ACADO symbolic function.
- *
- *  \param in Input to the exported function.
- *  \param out Output of the exported function.
- */
-void acado_rhs_ext(const real_t* in, real_t* out);
+void acado_rhs_forw(const real_t* in, real_t* out);
 
 /** Preparation step of the RTI scheme.
  *

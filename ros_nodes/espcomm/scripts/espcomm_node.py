@@ -4,7 +4,7 @@ from ipaddress import collapse_addresses
 import string
 import rospy
 import websocket
-
+from timeit import default_timer as timer
 import numpy
 
 from heli_messages.msg import BNO
@@ -13,7 +13,7 @@ from heli_messages.msg import BNO
 
 def publishBNOData():
     rospy.init_node('espcomm', anonymous=True)
-    pub = rospy.Publisher('BNOData', BNO, queue_size=100)
+    pub = rospy.Publisher('BNOData', BNO, queue_size=1)
     rate = rospy.Rate(100) # 100hz
     msg = BNO()
 
@@ -29,8 +29,10 @@ def publishBNOData():
     print("Connected!")
 
     while not rospy.is_shutdown():
+        start = timer()
         ws.send('x')
         message = ws.recv()
+        
         data = message.split(':')
         
         try:
@@ -49,6 +51,8 @@ def publishBNOData():
             print(e)
 
         pub.publish(msg)
+        end = timer()
+        print(end-start)
         rate.sleep()
     return
 

@@ -8,7 +8,7 @@ import pygame
 class get_data:
 
     def __init__(self):
-        self.pub = rospy.Publisher("/taranis_state", String, queue_size=10)
+        self.pub = rospy.Publisher("/taranis_state", String, queue_size=1)
         pygame.init()
         pygame.joystick.init()
         self.joystick = pygame.joystick.Joystick(0)

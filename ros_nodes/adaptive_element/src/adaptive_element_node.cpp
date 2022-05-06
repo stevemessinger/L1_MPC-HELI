@@ -50,9 +50,9 @@ int main(int argc, char** argv){
     ros::Publisher inputsPublisher;
     double startTime = ros::Time::now().toSec();
 
-    poseSubscriber = nh.subscribe("pose",  1000, &poseSubscriberCallback);
-    MPCSubscriber = nh.subscribe("mpc_input", 1000, &MPCSubscriberCallback);
-    inputsPublisher = nh.advertise<heli_messages::Inputs>("L1_inputs", 1000);
+    poseSubscriber = nh.subscribe("pose",  1, &poseSubscriberCallback);
+    MPCSubscriber = nh.subscribe("mpc_input", 1, &MPCSubscriberCallback);
+    inputsPublisher = nh.advertise<heli_messages::Inputs>("L1_inputs", 1);
     heli_messages::Inputs L1Inputsmsg;
 
     // L1 initialization
