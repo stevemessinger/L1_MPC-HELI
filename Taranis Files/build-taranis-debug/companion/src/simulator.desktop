@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Simulator 2.3.15
+GenericName=Transmitter Simulator App
+Comment=The Ultimate Transmitter Simulator
+Icon=companion23
+Exec='simulator23'
+Terminal=false
+StartupNotify=false
+Categories=Application

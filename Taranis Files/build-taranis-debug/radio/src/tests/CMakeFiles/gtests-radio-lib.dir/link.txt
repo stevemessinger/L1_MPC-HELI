@@ -1,0 +1,2 @@
+/usr/bin/ar qc libgtests-radio-lib.a  CMakeFiles/gtests-radio-lib.dir/usr/src/gtest/src/gtest-all.cc.o
+/usr/bin/ranlib libgtests-radio-lib.a

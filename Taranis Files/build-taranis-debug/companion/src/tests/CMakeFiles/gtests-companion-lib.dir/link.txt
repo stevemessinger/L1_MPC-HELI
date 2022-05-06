@@ -1,0 +1,2 @@
+/usr/bin/ar qc libgtests-companion-lib.a  CMakeFiles/gtests-companion-lib.dir/usr/src/gtest/src/gtest-all.cc.o
+/usr/bin/ranlib libgtests-companion-lib.a

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Encoding=UTF-8
+Name=Companion 2.3.15
+GenericName=Transmitter Companion App
+Comment=The Ultimate Transmitter Companion
+Icon=companion23
+Exec='companion23'
+Terminal=false
+StartupNotify=false
+Categories=Application
