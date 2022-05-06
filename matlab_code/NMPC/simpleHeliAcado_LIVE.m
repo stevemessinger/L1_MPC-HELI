@@ -13,9 +13,8 @@ BEGIN_ACADO;
     
     %% setup the differential equation
     diffEQ = acado.DifferentialEquation();
-    
 
-    DifferentialState x y z qw qx qy qz xd yd zd p q r;
+    DifferentialState x y z qw qx qy qz xd yd zd p q r; 
     
     Control col roll pitch yaw;
     
@@ -49,24 +48,24 @@ BEGIN_ACADO;
     %% OCP
     startTime = 0;
     endTime = 1;
-    freq = 10;
+    numPoints = 10;
     
-    ocp = acado.OCP(startTime, endTime, endTime*freq);
+    ocp = acado.OCP(startTime, endTime, numPoints);
     
     h = {x, y, z, qw, qx, qy, qz, xd, yd, zd, p, q, r};
     
     Q = eye(13);
         
-    Q(1,1) = 10;
-    Q(2,2) = 10;
-    Q(3,3) = 10;
+    Q(1,1) = 5;
+    Q(2,2) = 5;
+    Q(3,3) = 5;
     Q(4,4) = 5;
     Q(5,5) = 5;
     Q(6,6) = 5;
     Q(7,7) = 5;
-    Q(8,8) = 1/20;
-    Q(9,9) = 1/20;
-    Q(10,10) = 1/20;
+    Q(8,8) = 1/2;
+    Q(9,9) = 1/2;
+    Q(10,10) = 1/2;
     Q(11,11) = 1/20;
     Q(12,12) = 1/20;
     Q(13,13) = 1/20;
@@ -78,7 +77,7 @@ BEGIN_ACADO;
     
     ocp.subjectTo(diffEQ);
     
-    % formulated to be equivelent to stick inputs
+    % formulated to be equivelent to stick inputs and max change in inputs
     colMax = 1;
     rollMax = 1;
     pitchMax = 1;
@@ -121,7 +120,7 @@ load('lemniscate.mat');
 load('circle.mat');
 load('Takeoff.mat');
 circle(:,1) = circle(:,1) - circle(1,1);
-data = Melon1; % choose reference trajectory here
+data = lemniscate; % choose reference trajectory here
 
 trajectory = zeros(length(data(:,1)), 14);
 trajectory(:,1) = data(:,1);
@@ -138,12 +137,12 @@ trajectory(:,11) = -data(:,17);
 trajectory(:,12) = data(:,5);
 trajectory(:,13) = -data(:,6);
 trajectory(:,14) = -data(:,7);
-trajectory = Takeoff;
+%trajectory = Takeoff;
 
 
 dt=0.002; % time step
 endTime = floor(trajectory(end,1));
-endTime = 5;
+%endTime = 4;
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
 f_dyn = 'heliDynamics';
@@ -184,7 +183,9 @@ z_hat = zeros(6,length(t),2);
 z = z_hat;
 G = zeros(6,1);
 
-L1 = L1_Controller(5, 15);
+time_delay = 0.001; 
+
+L1 = L1_Controller(2, 15);
 
 sigm_temp = zeros(6,length(t),2); 
 
@@ -192,13 +193,14 @@ sigm_temp = zeros(6,length(t),2);
 x = nan(length(t), 13, 2);
 xdot = x;
 u = nan(length(t), 4,2);
+temp = u(1,:,1); 
 
 for i = 1:2
     
     x0 = trajectory(1,2:end);
     x(1,:,i) = x0;
     z_hat(:,1,i) = [x0(8),x0(9),x0(10),x0(11),x0(12),x0(13)]'; 
-
+    
     k = 1;
     count = 1;
     tic;
@@ -271,7 +273,10 @@ for i = 1:2
 
          u(k,:,i) = L1.u;
 
-         [x(k+1,:,i), xdot(k,:,i)] = RK4_zoh(f_dyn, x(k,:,i), u(k,:,i), t(k), params, dt);
+         if mod(t(k),time_delay) == 0 
+                temp = u(k,:,i); 
+         end 
+         [x(k+1,:,i), xdot(k,:,i)] = RK4_zoh(f_dyn, x(k,:,i), temp, t(k), params, dt);
         
         disp(t(k));
         k = k + 1;
