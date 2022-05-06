@@ -31,11 +31,15 @@ make clean all;
 ACADO for matlab will now build
 
 5: After the build has finished run the command:
-''''bash
+````bash
 savepath;
-''''
+````
 
 to save the build path to the matlab install
+
+## Running the simulation
+Navigate to the /matlab_code/NMPC folder in the repo and open the simpleHeliAcado_LIVE.m script.
+This is the main simulation script. Simply run the script to run the simulation. Changes will be made in the future to make the simulation easier to use.
 
   
 # ROS Implimentation
