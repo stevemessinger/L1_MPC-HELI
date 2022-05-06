@@ -13,9 +13,8 @@ BEGIN_ACADO;
     
     %% setup the differential equation
     diffEQ = acado.DifferentialEquation();
-    
 
-    DifferentialState x y z qw qx qy qz xd yd zd p q r;
+    DifferentialState x y z qw qx qy qz xd yd zd p q r; 
     
     Control col roll pitch yaw;
     
@@ -49,24 +48,24 @@ BEGIN_ACADO;
     %% OCP
     startTime = 0;
     endTime = 1;
-    freq = 10;
+    numPoints = 10;
     
-    ocp = acado.OCP(startTime, endTime, endTime*freq);
+    ocp = acado.OCP(startTime, endTime, numPoints);
     
     h = {x, y, z, qw, qx, qy, qz, xd, yd, zd, p, q, r};
     
     Q = eye(13);
         
-    Q(1,1) = 10;
-    Q(2,2) = 10;
-    Q(3,3) = 10;
+    Q(1,1) = 5;
+    Q(2,2) = 5;
+    Q(3,3) = 5;
     Q(4,4) = 5;
     Q(5,5) = 5;
     Q(6,6) = 5;
     Q(7,7) = 5;
-    Q(8,8) = 1/20;
-    Q(9,9) = 1/20;
-    Q(10,10) = 1/20;
+    Q(8,8) = 1/2;
+    Q(9,9) = 1/2;
+    Q(10,10) = 1/2;
     Q(11,11) = 1/20;
     Q(12,12) = 1/20;
     Q(13,13) = 1/20;
@@ -78,7 +77,7 @@ BEGIN_ACADO;
     
     ocp.subjectTo(diffEQ);
     
-    % formulated to be equivelent to stick inputs
+    % formulated to be equivelent to stick inputs and max change in inputs
     colMax = 1;
     rollMax = 1;
     pitchMax = 1;
@@ -119,6 +118,7 @@ load('result.mat');
 load('Melon1.mat');
 load('lemniscate.mat');
 load('circle.mat');
+load('Takeoff.mat');
 circle(:,1) = circle(:,1) - circle(1,1);
 data = lemniscate; % choose reference trajectory here
 
@@ -137,10 +137,12 @@ trajectory(:,11) = -data(:,17);
 trajectory(:,12) = data(:,5);
 trajectory(:,13) = -data(:,6);
 trajectory(:,14) = -data(:,7);
+%trajectory = Takeoff;
 
 
-dt=0.01; % time step
+dt=0.002; % time step
 endTime = floor(trajectory(end,1));
+%endTime = 4;
 t=0:dt:endTime; % have space for 300 seconds (5 minutes of simulation)
 
 f_dyn = 'heliDynamics';
@@ -179,7 +181,11 @@ u_L1 = zeros(4,length(t),2); %initialize adaptive element input
 u_mpc = u_L1; 
 z_hat = zeros(6,length(t),2); 
 z = z_hat;
-G = zeros(6,1); 
+G = zeros(6,1);
+
+time_delay = 0.001; 
+
+L1 = L1_Controller(2, 15);
 
 sigm_temp = zeros(6,length(t),2); 
 
@@ -187,12 +193,14 @@ sigm_temp = zeros(6,length(t),2);
 x = nan(length(t), 13, 2);
 xdot = x;
 u = nan(length(t), 4,2);
+temp = u(1,:,1); 
 
 for i = 1:2
+    
     x0 = trajectory(1,2:end);
     x(1,:,i) = x0;
     z_hat(:,1,i) = [x0(8),x0(9),x0(10),x0(11),x0(12),x0(13)]'; 
-
+    
     k = 1;
     count = 1;
     tic;
@@ -212,56 +220,63 @@ for i = 1:2
         %L1 ADAPTATION
         %**************
     
-        %deconstruct state vector 
-        p_n = x(k,1,i); p_e = x(k,2,i); p_d = x(k,3,i);
-        q0 = x(k,4,i); q1 = x(k,5,i); q2 = x(k,6,i); q3 = x(k,7,i);
-        v_n = x(k,8,i); v_e = x(k,9,i); v_d = x(k,10,i);
-        p = x(k,11,i); q = x(k,12,i); r = x(k,13,i);
-        %L1-Adaptive Augmentation 
-        R_bi = [(q0^2 + q1^2 - q2^2 - q3^2), 2*(q1*q2+q0*q3), 2*(q1*q3-q0*q2);
-                 2*(q1*q2-q0*q3), (q0^2 - q1^2 + q2^2 - q3^2), 2*(q2*q3+q0*q1);
-                 2*(q1*q3+q0*q2), 2*(q2*q3-q0*q1), (q0^2 - q1^2 - q2^2 + q3^2)]';
-    
-        e_xb = R_bi(:,1); 
-        e_yb = R_bi(:,2);
-        e_zb = R_bi(:,3);
-    
-        z(:,k,i) = [v_n v_e v_d p q r]'; %state vector 
-    
-        T_mpc = K_col*u_mpc(1,k,i);
-        M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2,k,i);(-1/tau_q)*q+K_theta*u_mpc(3,k,i);(-1/tau_r)*r+K_psi*u_mpc(4,k,i)];
-    
-        f = [[0;0;9.80665]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
-        
-        g = [e_zb zeros(3,3);zeros(3,1) eye(3)]; %uncertainty in matched component 
-        g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
-    
-        PHI = inv(A_s)*(expm(A_s*dt) - eye(6)); 
-        mu = expm(A_s*dt)*(z_hat(:,k,i) - z(:,k,i)); 
-        G = [g g_T];
+%         %deconstruct state vector 
+%         p_n = x(k,1,i); p_e = x(k,2,i); p_d = x(k,3,i);
+%         q0 = x(k,4,i); q1 = x(k,5,i); q2 = x(k,6,i); q3 = x(k,7,i);
+%         v_n = x(k,8,i); v_e = x(k,9,i); v_d = x(k,10,i);
+%         p = x(k,11,i); q = x(k,12,i); r = x(k,13,i);
+%         %L1-Adaptive Augmentation 
+%         R_bi = [(q0^2 + q1^2 - q2^2 - q3^2), 2*(q1*q2+q0*q3), 2*(q1*q3-q0*q2);
+%                  2*(q1*q2-q0*q3), (q0^2 - q1^2 + q2^2 - q3^2), 2*(q2*q3+q0*q1);
+%                  2*(q1*q3+q0*q2), 2*(q2*q3-q0*q1), (q0^2 - q1^2 - q2^2 + q3^2)]';
+%     
+%         e_xb = R_bi(:,1); 
+%         e_yb = R_bi(:,2);
+%         e_zb = R_bi(:,3);
+%     
+%         z(:,k,i) = [v_n v_e v_d p q r]'; %state vector 
+%     
+%         T_mpc = K_col*u_mpc(1,k,i);
+%         M_mpc = [(-1/tau_p)*p+K_phi*u_mpc(2,k,i);(-1/tau_q)*q+K_theta*u_mpc(3,k,i);(-1/tau_r)*r+K_psi*u_mpc(4,k,i)];
+%     
+%         f = [[0;0;9.80665]+T_mpc.*e_zb;M_mpc]; %desired dynamics 
+%         
+%         g = [e_zb zeros(3,3);zeros(3,1) eye(3)]; %uncertainty in matched component 
+%         g_T = [e_xb e_yb; zeros(3,2)]; %uncertainty in unmatched dynamics 
+%     
+%         PHI = inv(A_s)*(expm(A_s*dt) - eye(6)); 
+%         mu = expm(A_s*dt)*(z_hat(:,k,i) - z(:,k,i)); 
+%         G = [g g_T];
+% 
+%         sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
+%         sigma_m = sigma(1:4); 
+%         sigma_um = sigma(5:6); 
+%     
+%         temp = [sigma_um(1:2);sigma_m(1)]; 
+%         sigm_temp(:,k,i) = [temp;sigma_m(2:4)]; 
+%         
+%         % LPF on the adaption
+%         u_L1(:,k+1,i) = u_L1(:,k,i)*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
+% 
+%         % No LPF on the adaption
+%         %u_L1(:,k+1,i) = sigma_m;
+% 
+%         z_hat(:,k+1,i) = z_hat(:,k,i) + (f + g*(u_L1(:,k+1,i) + sigma_m) + g_T*sigma_um + A_s*(z_hat(:,k,i) - z(:,k,i)))*dt; 
+%     
+%         if i == 1
+%             u(k,:,i) = u_mpc(:,k,i);
+%         else 
+%             u(k,:,i) = u_mpc(:,k,i) + u_L1(:,k+1,i)./[K_col;K_phi;K_theta;K_psi];
+%         end
+%         
+         L1.updateController(x(k,:,i), u_mpc(:,k,i),dt);
 
-        sigma = -eye(6)*inv(G)*inv(PHI)*mu; %piecewise-constant adaptation law 
-        sigma_m = sigma(1:4); 
-        sigma_um = sigma(5:6); 
-    
-        temp = [sigma_um(1:2);sigma_m(1)]; 
-        sigm_temp(:,k,i) = [temp;sigma_m(2:4)]; 
-        
-        % LPF on the adaption
-        u_L1(:,k+1,i) = u_L1(:,k,i)*exp(-w_co*dt) - sigma_m*(1 - exp(-w_co*dt)); 
+         u(k,:,i) = L1.u;
 
-        % No LPF on the adaption
-        %u_L1(:,k+1,i) = sigma_m;
-
-        z_hat(:,k+1,i) = z_hat(:,k,i) + (f + g*(u_L1(:,k+1,i) + sigma_m) + g_T*sigma_um + A_s*(z_hat(:,k,i) - z(:,k,i)))*dt; 
-    
-        if i == 1
-            u(k,:,i) = u_mpc(:,k,i);
-        else 
-            u(k,:,i) = u_mpc(:,k,i) + u_L1(:,k+1,i)./[K_col;K_phi;K_theta;K_psi];
-        end
-        
-        [x(k+1,:,i), xdot(k,:,i)] = RK4_zoh(f_dyn, x(k,:,i), u(k,:,i), t(k), params, dt);
+         if mod(t(k),time_delay) == 0 
+                temp = u(k,:,i); 
+         end 
+         [x(k+1,:,i), xdot(k,:,i)] = RK4_zoh(f_dyn, x(k,:,i), temp, t(k), params, dt);
         
         disp(t(k));
         k = k + 1;

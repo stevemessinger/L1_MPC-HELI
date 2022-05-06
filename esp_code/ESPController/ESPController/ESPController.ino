@@ -29,15 +29,9 @@ float wx, wy, wz, ax, ay, az;
 imu::Vector<3> gyroVector, IMUVector;
 int start, dt;
 
-//SBUS globals
-bfs::SbusRx sbus_rx(&Serial2);
-bfs::SbusTx sbus_tx(&Serial2);
-std::array<int16_t, bfs::SbusRx::NUM_CH()> sbus_data;
-int commands[5] = { 1000, 1000, 1811, 1000, 1000};
-
 //FreeRTOS Globals
 static SemaphoreHandle_t mutex;
-int outputStartTime, webSocketStartTime;
+int webSocketStartTime, IMUStartTime;
 
 //Websocket Callback
 void onWebSocketEvent(const uint8_t client_num,
@@ -69,27 +63,10 @@ void onWebSocketEvent(const uint8_t client_num,
     // Handle text messages from client
     case WStype_TEXT:// upon reciving a message, parse channel commands and send IMU data back
     {
-        // convert payload to char array
-        char rcvMessage[length]; // not sure why the compiler doesnt like this, length is const
-        for (int i = 0; i < length; i++) {
-            rcvMessage[i] = *(payload + i);
-        }
-
-        //Tokenize the received message 
-        char* token;
-        int i = 0;
-        token = strtok(rcvMessage, ":");
-        while (token != NULL) {
-            commands[i] = atoi(token);
-            //Serial.print(commands[i]);
-            //Serial.print("\t");
-            token = strtok(NULL, ":");
-            i++;
-        }
-        Serial.println();
-        
+        xSemaphoreTake(mutex, portMAX_DELAY);
         //send the IMU data back to the client
         webSocket.sendTXT(client_num, message.c_str());
+        xSemaphoreGive(mutex);
     }break;
 
     // For everything else: do nothing
@@ -107,12 +84,13 @@ void onWebSocketEvent(const uint8_t client_num,
 void websocketTask(void* parameter) {
     for (;;) {
         /// !!ENTERING CRITIAL SECTION!!
-        xSemaphoreTake(mutex, portMAX_DELAY);
+        //xSemaphoreTake(mutex, portMAX_DELAY);
         webSocket.loop(); // perform websocket function
-        xSemaphoreGive(mutex);
+ 
         Serial.print("WebSocket dt: ");
         Serial.println(millis() - webSocketStartTime);
         webSocketStartTime = millis();
+        //xSemaphoreGive(mutex);
         /// !!ENDING CRITIAL SECTION!! 
     }
 }
@@ -135,11 +113,9 @@ void setup() {
 
     webSocket.begin();
     webSocket.onEvent(onWebSocketEvent);
-    outputStartTime = millis();
     webSocketStartTime = millis();
+    IMUStartTime = millis();
 
-    sbus_rx.Begin(16,17);
-    sbus_tx.Begin(16,17);
 
     mutex = xSemaphoreCreateMutex();
 
@@ -153,7 +129,6 @@ void setup() {
 
 // the loop function runs over and over again until power down or reset
 void loop() {
-
     // Get data from the IMU and form the message (more efficient this way)
     gyroVector = bno.getVector(Adafruit_BNO055::VECTOR_GYROSCOPE);
     IMUVector = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
@@ -178,44 +153,12 @@ void loop() {
     /// !!ENTERING CRITAL SECTION!!
     xSemaphoreTake(mutex, portMAX_DELAY);
     message = msg.str();
+    xSemaphoreGive(mutex);
     //Serial.println(message.c_str());
 
-    //Send sbus packet
-    sbus_data[0] = commands[0]; // roll (A)
-    sbus_data[1] = commands[1]; // pitch (E)
-    sbus_data[2] = commands[2]; // throttle (T)
-    sbus_data[3] = commands[3]; // yaw (R)
-    sbus_data[4] = 988; // gyro (needs to be in 3D mode) (G)
-    sbus_data[5] = commands[4]; // collective (Col - Pitch)
-
-    //Serial.print("SBUS: ");
-    //for (int8_t i = 0; i < bfs::SbusRx::NUM_CH(); i++) {
-    //    Serial.print(sbus_data[i]);
-    //    Serial.print("\t");
-    //}
-    //Serial.println();
-    //if (sbus_rx.Read()) {
-    //    /* Grab the received data */
-    //    sbus_data = sbus_rx.ch();
-    //    /* Display the received data */
-    //    for (int8_t i = 0; i < bfs::SbusRx::NUM_CH(); i++) {
-    //        Serial.print(sbus_data[i]);
-    //        Serial.print("\t");
-    //    }
-    //    /* Display lost frames and failsafe data */
-    //    Serial.print(sbus_rx.lost_frame());
-    //    Serial.print("\t");
-    //    Serial.println(sbus_rx.failsafe());
-    //}
-
-    xSemaphoreGive(mutex);
     /// !!END CRITICAL SECTION!!
 
-    // write the data
-    sbus_tx.ch(sbus_data);
-    sbus_tx.Write();
-
-    Serial.print("Ouput dt: ");
-    Serial.println(millis() - outputStartTime);
-    outputStartTime = millis();
+    Serial.print("IMU dt: ");
+    Serial.println(millis() - IMUStartTime);
+    IMUStartTime = millis();
 }
