@@ -1,2 +1,0 @@
-/usr/bin/ar qc libmaxLibQtWidgets.a  CMakeFiles/maxLibQtWidgets.dir/ExportableTableView.cpp.o CMakeFiles/maxLibQtWidgets.dir/TimerEdit.cpp.o CMakeFiles/maxLibQtWidgets.dir/moc_ExportableTableView.cpp.o CMakeFiles/maxLibQtWidgets.dir/moc_TimerEdit.cpp.o
-/usr/bin/ranlib libmaxLibQtWidgets.a

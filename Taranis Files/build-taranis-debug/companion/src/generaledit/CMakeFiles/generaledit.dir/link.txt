@@ -1,2 +1,0 @@
-/usr/bin/ar qc libgeneraledit.a  CMakeFiles/generaledit.dir/calibration.cpp.o CMakeFiles/generaledit.dir/hardware.cpp.o CMakeFiles/generaledit.dir/trainer.cpp.o CMakeFiles/generaledit.dir/generaledit.cpp.o CMakeFiles/generaledit.dir/generalsetup.cpp.o CMakeFiles/generaledit.dir/moc_calibration.cpp.o CMakeFiles/generaledit.dir/moc_hardware.cpp.o CMakeFiles/generaledit.dir/moc_trainer.cpp.o CMakeFiles/generaledit.dir/moc_generaledit.cpp.o CMakeFiles/generaledit.dir/moc_generalsetup.cpp.o
-/usr/bin/ranlib libgeneraledit.a

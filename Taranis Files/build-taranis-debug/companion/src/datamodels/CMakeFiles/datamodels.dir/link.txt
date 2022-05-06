@@ -1,2 +1,0 @@
-/usr/bin/ar qc libdatamodels.a  CMakeFiles/datamodels.dir/compounditemmodels.cpp.o CMakeFiles/datamodels.dir/filtereditemmodels.cpp.o CMakeFiles/datamodels.dir/moc_compounditemmodels.cpp.o CMakeFiles/datamodels.dir/moc_filtereditemmodels.cpp.o
-/usr/bin/ranlib libdatamodels.a

@@ -1,2 +1,0 @@
-/usr/bin/ar qc libcommon.a  CMakeFiles/common.dir/appdebugmessagehandler.cpp.o CMakeFiles/common.dir/customdebug.cpp.o CMakeFiles/common.dir/helpers.cpp.o CMakeFiles/common.dir/translations.cpp.o CMakeFiles/common.dir/modeledit/node.cpp.o CMakeFiles/common.dir/modeledit/edge.cpp.o CMakeFiles/common.dir/moc_appdebugmessagehandler.cpp.o CMakeFiles/common.dir/moc_helpers.cpp.o CMakeFiles/common.dir/modeledit/moc_node.cpp.o CMakeFiles/common.dir/qrc_companion.cpp.o CMakeFiles/common.dir/qrc_translations.cpp.o
-/usr/bin/ranlib libcommon.a

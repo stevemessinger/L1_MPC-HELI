@@ -1,5 +1,0 @@
-{
-  "TestFramework": "Pytest",
-  "Interpreter": "env\\Scripts\\python.exe",
-  "SuppressEnvironmentCreationPrompt": true
-}
