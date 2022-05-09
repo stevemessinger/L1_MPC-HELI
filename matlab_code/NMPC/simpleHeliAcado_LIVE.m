@@ -123,21 +123,21 @@ circle(:,1) = circle(:,1) - circle(1,1);
 data = lemniscate; % choose reference trajectory here
 
 trajectory = zeros(length(data(:,1)), 14);
-trajectory(:,1) = data(:,1);
-trajectory(:,2) = data(:,18);
-trajectory(:,3) = -data(:,19);
-trajectory(:,4) = -data(:,20);
-trajectory(:,5) = data(:,11);
-trajectory(:,6) = data(:,8);
-trajectory(:,7) = -data(:,9);
-trajectory(:,8) = -data(:,10);
-trajectory(:,9) = data(:,15);
-trajectory(:,10) = -data(:,16);
-trajectory(:,11) = -data(:,17);
-trajectory(:,12) = data(:,5);
-trajectory(:,13) = -data(:,6);
-trajectory(:,14) = -data(:,7);
-%trajectory = Takeoff;
+% trajectory(:,1) = data(:,1);
+% trajectory(:,2) = data(:,18);
+% trajectory(:,3) = -data(:,19);
+% trajectory(:,4) = -data(:,20);
+% trajectory(:,5) = data(:,11);
+% trajectory(:,6) = data(:,8);
+% trajectory(:,7) = -data(:,9);
+% trajectory(:,8) = -data(:,10);
+% trajectory(:,9) = data(:,15);
+% trajectory(:,10) = -data(:,16);
+% trajectory(:,11) = -data(:,17);
+% trajectory(:,12) = data(:,5);
+% trajectory(:,13) = -data(:,6);
+% trajectory(:,14) = -data(:,7);
+trajectory = Takeoff;
 
 
 dt=0.002; % time step
