@@ -7,7 +7,7 @@ from std_msgs.msg import String
 import pygame
 
 def taranis_talk():
-    pub = rospy.Publisher('data_rec', String, queue_size=1)
+    pub = rospy.Publisher('data_rec', String, queue_size=10)
     rospy.init_node('taranis_talk', anonymous=True)
     rate = rospy.Rate(50) # 50hz
 

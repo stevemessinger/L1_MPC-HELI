@@ -219,7 +219,7 @@ add_executable(mpc_node
   include/heli_MPC_EXPORT/acado_auxiliary_functions.c
   include/heli_MPC_EXPORT/acado_integrator.c
   include/heli_MPC_EXPORT/acado_qpoases_interface.cpp
-  #include/heli_MPC_EXPORT/acado_solver_function.c
+  include/heli_MPC_EXPORT/acado_solver_sfunction.c
   include/heli_MPC_EXPORT/acado_solver.c
   include/heli_MPC_EXPORT/qpoases/SRC/Bounds.cpp
   include/heli_MPC_EXPORT/qpoases/SRC/Constraints.cpp
